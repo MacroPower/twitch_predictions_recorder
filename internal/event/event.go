@@ -1,6 +1,8 @@
 package event
 
-import "time"
+import (
+	"time"
+)
 
 type Event struct {
 	Type string    `json:"type"`
@@ -61,91 +63,4 @@ type EventData struct {
 		Title                   string    `json:"title"`
 		WinningOutcomeID        string    `json:"winning_outcome_id"`
 	} `json:"event"`
-}
-
-func (e *EventData) ToSamples(channel string) Samples {
-	blueOutcome := e.getOutcomeWithColor("BLUE")
-	pinkOutcome := e.getOutcomeWithColor("PINK")
-
-	return Samples{
-		Timestamp: e.Timestamp,
-
-		ID:          e.Event.ID,
-		ChannelID:   e.Event.ChannelID,
-		ChannelName: channel,
-
-		CreatedAt: e.Event.CreatedAt,
-		EndedAt:   e.Event.EndedAt,
-		LockedAt:  e.Event.LockedAt,
-
-		CreatedBy: e.Event.CreatedBy.UserDisplayName,
-		EndedBy:   e.Event.EndedBy.UserDisplayName,
-		LockedBy:  e.Event.LockedBy.UserDisplayName,
-
-		BlueID:          blueOutcome.ID,
-		BlueTitle:       blueOutcome.Title,
-		BlueTotalPoints: blueOutcome.TotalPoints,
-		BlueTotalUsers:  blueOutcome.TotalUsers,
-		BlueWon:         e.Event.WinningOutcomeID == blueOutcome.ID,
-
-		//BluePredictors:  blueOutcome.TopPredictors,
-
-		PinkID:          pinkOutcome.ID,
-		PinkTitle:       pinkOutcome.Title,
-		PinkTotalPoints: pinkOutcome.TotalPoints,
-		PinkTotalUsers:  pinkOutcome.TotalUsers,
-		PinkWon:         e.Event.WinningOutcomeID == pinkOutcome.ID,
-
-		//PinkPredictors:  pinkOutcome.TopPredictors,
-
-		PredictionWindowSeconds: e.Event.PredictionWindowSeconds,
-		Status:                  e.Event.Status,
-		Title:                   e.Event.Title,
-	}
-}
-
-type Samples struct {
-	Timestamp time.Time
-
-	ID          string
-	ChannelID   string
-	ChannelName string
-
-	CreatedAt time.Time
-	EndedAt   time.Time
-	LockedAt  time.Time
-
-	CreatedBy string
-	EndedBy   string
-	LockedBy  string
-
-	// Outcomes
-
-	BlueID          string
-	BlueTitle       string
-	BlueTotalPoints int
-	BlueTotalUsers  int
-	BlueWon         bool
-	//BluePredictors  []Predictor
-
-	PinkID          string
-	PinkTitle       string
-	PinkTotalPoints int
-	PinkTotalUsers  int
-	PinkWon         bool
-	//PinkPredictors  []Predictor
-
-	PredictionWindowSeconds int
-	Status                  string // ACTIVE or LOCKED or RESOLVE_PENDING or RESOLVED
-	Title                   string
-}
-
-func (e *EventData) getOutcomeWithColor(color string) Outcome {
-	for _, o := range e.Event.Outcomes {
-		if o.Color == color {
-			return o
-		}
-	}
-
-	return Outcome{}
 }

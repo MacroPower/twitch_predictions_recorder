@@ -104,7 +104,7 @@ func main() {
 		panic(err)
 	}
 
-	db.Setup(pgdb, *pgTableName, &event.Samples{})
+	db.SetupDefault(pgdb)
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
@@ -129,8 +129,8 @@ func main() {
 		if e.Data.Event.Status == "RESOLVED" {
 			fmt.Printf("Shard #%d > %s %+v\n", shard, topic, e)
 
-			pgdb.Table(*pgTableName).Create([]event.Samples{
-				e.Data.ToSamples(ids[e.Data.Event.ChannelID]),
+			pgdb.Table(*pgTableName).Create([]db.Samples{
+				db.ToSamples(&e.Data, ids[e.Data.Event.ChannelID]),
 			})
 		}
 
@@ -168,5 +168,5 @@ func getSize(iter int, size int, max int) (int, int) {
 		return start, max
 	}
 
-	return start, end
+	return start, end - 1
 }
