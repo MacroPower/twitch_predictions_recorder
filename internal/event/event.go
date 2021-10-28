@@ -5,8 +5,8 @@ import (
 )
 
 type Event struct {
-	Type string    `json:"type"`
-	Data EventData `json:"data"`
+	Type string `json:"type"`
+	Data Data   `json:"data"`
 }
 
 type User struct {
@@ -46,7 +46,7 @@ type Outcome struct {
 	} `json:"badge"`
 }
 
-type EventData struct {
+type Data struct {
 	Timestamp time.Time `json:"timestamp"`
 	Event     struct {
 		ID                      string    `json:"id"`

@@ -1,0 +1,84 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+project_name: 'twitch_predictions_recorder'
+
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+    # you may remove this if you don't need go generate
+    - go generate ./...
+
+builds:
+  - main: ./cmd/twitch_predictions_recorder
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+
+archives:
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+
+dockers:
+  - goos: linux
+    goarch: amd64
+    dockerfile: Dockerfile
+    use: buildx
+    image_templates:
+      - 'macropower/{{ .ProjectName }}:{{ .Tag }}-amd64'
+    build_flag_templates:
+      - '--platform=linux/amd64'
+      - '--label=org.opencontainers.image.title={{ .ProjectName }}'
+      - '--label=org.opencontainers.image.version={{ .Tag }}'
+      - '--label=org.opencontainers.image.revision={{ .FullCommit }}'
+      - '--label=org.opencontainers.image.created={{ .Date }}'
+      - '--label=org.opencontainers.image.source={{ .GitURL }}'
+  - goos: linux
+    goarch: arm64
+    dockerfile: Dockerfile
+    use: buildx
+    image_templates:
+      - 'macropower/{{ .ProjectName }}:{{ .Tag }}-arm64'
+    build_flag_templates:
+      - '--platform=linux/arm64'
+      - '--label=org.opencontainers.image.title={{ .ProjectName }}'
+      - '--label=org.opencontainers.image.version={{ .Tag }}'
+      - '--label=org.opencontainers.image.revision={{ .FullCommit }}'
+      - '--label=org.opencontainers.image.created={{ .Date }}'
+      - '--label=org.opencontainers.image.source={{ .GitURL }}'
+
+docker_manifests:
+  - name_template: 'macropower/{{ .ProjectName }}:latest'
+    image_templates:
+      - 'macropower/{{ .ProjectName }}:{{ .Tag }}-amd64'
+      - 'macropower/{{ .ProjectName }}:{{ .Tag }}-arm64'
+  - name_template: 'macropower/{{ .ProjectName }}:{{ .Tag }}'
+    image_templates:
+      - 'macropower/{{ .ProjectName }}:{{ .Tag }}-amd64'
+      - 'macropower/{{ .ProjectName }}:{{ .Tag }}-arm64'
+  - name_template: 'macropower/{{ .ProjectName }}:v{{ .Major }}'
+    image_templates:
+      - 'macropower/{{ .ProjectName }}:{{ .Tag }}-amd64'
+      - 'macropower/{{ .ProjectName }}:{{ .Tag }}-arm64'
+  - name_template: 'macropower/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}'
+    image_templates:
+      - 'macropower/{{ .ProjectName }}:{{ .Tag }}-amd64'
+      - 'macropower/{{ .ProjectName }}:{{ .Tag }}-arm64'
+
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: '{{ incpatch .Version }}-next'
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'

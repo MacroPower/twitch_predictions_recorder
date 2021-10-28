@@ -69,7 +69,7 @@ type Predictor struct {
 	UserDisplayName      string
 }
 
-func ToSamples(e *event.EventData, channel string) Samples {
+func ToSamples(e *event.Data, channel string) Samples {
 	blueOutcome := getOutcomeWithColor(e, "BLUE")
 	pinkOutcome := getOutcomeWithColor(e, "PINK")
 
@@ -108,7 +108,7 @@ func ToSamples(e *event.EventData, channel string) Samples {
 	}
 }
 
-func getOutcomeWithColor(e *event.EventData, color string) Outcome {
+func getOutcomeWithColor(e *event.Data, color string) Outcome {
 	for _, o := range e.Event.Outcomes {
 		if o.Color == color {
 			return Outcome{
@@ -151,9 +151,7 @@ func getPredictors(ep []event.Predictor, color string) (result []Predictor) {
 
 func mergePredictors(eps ...[]Predictor) (result []Predictor) {
 	for _, ep := range eps {
-		for _, p := range ep {
-			result = append(result, p)
-		}
+		result = append(result, ep...)
 	}
 
 	return result
