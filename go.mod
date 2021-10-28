@@ -3,7 +3,7 @@ module github.com/MacroPower/twitch_predictions_recorder
 go 1.17
 
 require (
-	github.com/Adeithe/go-twitch v0.1.1
+	github.com/Adeithe/go-twitch v0.1.2-0.20211012072244-0dc41887ad7b
 	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1
 	gorm.io/driver/postgres v1.1.2
 	gorm.io/gorm v1.21.16
@@ -29,5 +29,3 @@ require (
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 )
-
-replace github.com/Adeithe/go-twitch => github.com/MacroPower/go-twitch v0.1.2-0.20211010214710-b4360c323ca4

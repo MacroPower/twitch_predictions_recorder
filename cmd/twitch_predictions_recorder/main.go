@@ -75,6 +75,7 @@ func main() {
 	api = api.NewBearer(token.AccessToken)
 
 	ids := make(map[string]string)
+
 	for i, seg := range streamersSeg {
 		start, end := getSize(i, streamerSegSize, len(streamers))
 		fmt.Printf("Getting IDs for streamer batch %d (%d - %d)\n", i+1, start, end)
@@ -133,7 +134,6 @@ func main() {
 				db.ToSamples(&e.Data, ids[e.Data.Event.ChannelID]),
 			})
 		}
-
 	})
 
 	mgr.OnShardLatencyUpdate(func(shard int, latency time.Duration) {
@@ -164,6 +164,7 @@ func printErr(err error) {
 func getSize(iter int, size int, max int) (int, int) {
 	start := iter * size
 	end := (iter + 1) * size
+
 	if end > max {
 		return start, max
 	}

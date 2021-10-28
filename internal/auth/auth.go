@@ -26,9 +26,10 @@ func Login(api *api.Client) (*api.TwitchLogin, error) {
 		fmt.Print("Twitch 2FA: ")
 		code := stdin()
 		if err := login.Verify(code); err != nil {
-			return nil, fmt.Errorf("%d, %v", errCode, err)
+			return nil, fmt.Errorf("%d, %w", errCode, err)
 		}
 	} else if errCode != 0 {
+		// nolint:goerr113
 		return nil, fmt.Errorf("failed: %s", login.GetError())
 	}
 
@@ -40,5 +41,6 @@ func Login(api *api.Client) (*api.TwitchLogin, error) {
 func stdin() string {
 	reader := bufio.NewReader(os.Stdin)
 	str, _ := reader.ReadString('\n')
+
 	return strings.TrimSuffix(strings.TrimSuffix(str, "\r\n"), "\n")
 }

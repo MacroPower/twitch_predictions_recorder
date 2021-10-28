@@ -24,6 +24,7 @@ func (pgdb PostgresDB) NewDB() (*gorm.DB, error) {
 		"host=%s port=%d sslmode=%s user=%s password=%s dbname=%s TimeZone=%s",
 		pgdb.Host, pgdb.Port, pgdb.SSLMode, pgdb.User, pgdb.Password, pgdb.DBName, pgdb.TimeZone,
 	)
+
 	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
 }
 
