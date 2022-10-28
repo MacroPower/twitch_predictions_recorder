@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 	"time"
 
-	"github.com/Adeithe/go-twitch"
+	twitch "github.com/Adeithe/go-twitch"
 	"github.com/Adeithe/go-twitch/api/helix"
 	"golang.org/x/oauth2/clientcredentials"
 	oauth2 "golang.org/x/oauth2/twitch"
@@ -44,7 +43,7 @@ const (
 func main() {
 	flag.Parse()
 
-	fileBytes, err := ioutil.ReadFile(*streamersFile)
+	fileBytes, err := os.ReadFile(*streamersFile)
 	if err != nil {
 		panic(err)
 	}

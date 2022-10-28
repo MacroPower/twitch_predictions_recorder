@@ -29,7 +29,7 @@ func Login(api *api.Client) (*api.TwitchLogin, error) {
 			return nil, fmt.Errorf("%d, %w", errCode, err)
 		}
 	} else if errCode != 0 {
-		// nolint:goerr113
+		//nolint:goerr113
 		return nil, fmt.Errorf("failed: %s", login.GetError())
 	}
 

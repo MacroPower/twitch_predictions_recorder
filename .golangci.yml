@@ -33,9 +33,9 @@ linters:
     # Sorted alphabetically.
     - asciicheck
     - bodyclose
-    # - cyclop
-    - deadcode
-    # - depguard
+    # - cyclop # Disabled length/complexity linters.
+    # - deadcode # Replaced by unused.
+    # - depguard # Enable with settings for required guards.
     - dogsled
     - dupl
     - durationcheck
@@ -43,33 +43,33 @@ linters:
     - errname
     - errorlint
     - exhaustive
-    # - exhaustivestruct
+    # - exhaustivestruct # Enable for certain files if needed.
     - exportloopref
-    # - forbidigo
+    # - forbidigo # Enable with settings for required guards.
     - forcetypeassert
-    # - funlen
-    # - gci
-    # - gochecknoglobals
-    - gochecknoinits
-    # - gocognit
+    # - funlen # Disabled length/complexity linters.
+    # - gci # Using goimports instead.
+    # - gochecknoglobals # Useful in some cases.
+    # - gochecknoinits # Useful in some cases.
+    # - gocognit # Disabled length/complexity linters.
     - goconst
     - gocritic
-    # - gocyclo
+    # - gocyclo # Disabled length/complexity linters.
     - godot
     - godox
-    - goerr113
-    - gofmt
+    # - goerr113 # No way to feasibly follow this in many cases.
+    # - gofmt # Using gofumpt instead.
     - gofumpt
     - goheader
     - goimports
-    # - gomnd
+    - gomnd
     - gomoddirectives
-    # - gomodguard
+    # - gomodguard # Enable with settings for required guards.
     - goprintffuncname
     - gosec
     - gosimple
     - govet
-    - ifshort
+    # - ifshort # Deprecated.
     - importas
     - ineffassign
     - lll
@@ -86,12 +86,12 @@ linters:
     - predeclared
     - promlinter
     - revive
-    - rowserrcheck
-    - sqlclosecheck
+    # - rowserrcheck # Disabled because of generics.
+    # - sqlclosecheck # Disabled because of generics.
     - staticcheck
-    - structcheck
+    # - structcheck # Replaced by unused.
     - stylecheck
-    # - tagliatelle
+    # - tagliatelle # Enable if standards are known.
     - testpackage
     - thelper
     - tparallel
@@ -99,15 +99,21 @@ linters:
     - unconvert
     - unparam
     - unused
-    - varcheck
-    - wastedassign
+    # - varcheck # Replaced by unused.
+    # - wastedassign # Disabled because of generics.
     - whitespace
-    # - wrapcheck
-    # - wsl
+    - wrapcheck
+    # - wsl # Way too annoying to deal with.
 
 linters-settings:
   misspell:
     locale: US
+
+  exhaustive:
+    default-signifies-exhaustive: true
+
+  goimports:
+    local-prefixes: github.com/MacroPower/twitch_predictions_recorder
 
 issues:
   exclude-rules:
@@ -115,3 +121,6 @@ issues:
       linters:
         - dupl
         - promlinter
+    - linters:
+        - errcheck
+      source: log\..+\.Log\(\"
