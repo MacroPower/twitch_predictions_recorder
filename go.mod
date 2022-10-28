@@ -4,12 +4,15 @@ go 1.19
 
 require (
 	github.com/Adeithe/go-twitch v0.1.2-0.20211012072244-0dc41887ad7b
+	github.com/alecthomas/kong v0.7.0
+	github.com/go-kit/log v0.2.1
 	golang.org/x/oauth2 v0.1.0
 	gorm.io/driver/postgres v1.4.4
 	gorm.io/gorm v1.24.0
 )
 
 require (
+	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect

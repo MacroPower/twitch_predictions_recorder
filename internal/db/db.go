@@ -19,28 +19,51 @@ type PostgresDB struct {
 	TimeZone string
 }
 
-func (pgdb PostgresDB) NewDB() (*gorm.DB, error) {
+func NewPostgresDB(pgdb PostgresDB) (*GormDB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s port=%d sslmode=%s user=%s password=%s dbname=%s TimeZone=%s",
 		pgdb.Host, pgdb.Port, pgdb.SSLMode, pgdb.User, pgdb.Password, pgdb.DBName, pgdb.TimeZone,
 	)
 
-	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("error opening db connection: %w", err)
+	}
+
+	return &GormDB{db}, nil
 }
 
-func Setup(gdb *gorm.DB, obj interface{}) {
-	if err := gdb.AutoMigrate(obj); err != nil {
+type DB interface {
+	SetupDefaults()
+	AddSamples(samples ...Samples)
+}
+
+type GormDB struct {
+	db *gorm.DB
+}
+
+func (gdb *GormDB) SetupDefaults() {
+	gdb.setup(&Samples{})
+	gdb.setup(&Predictor{})
+
+	statement := "create_hypertable('samples', 'timestamp')"
+	gdb.db.Select(statement)
+}
+
+func (gdb *GormDB) AddSamples(samples ...Samples) {
+	gdb.db.Table("samples").Create(samples)
+}
+
+func (gdb *GormDB) setup(obj interface{}) {
+	if err := gdb.db.AutoMigrate(obj); err != nil {
 		panic(err)
 	}
 }
 
-func SetupHypertable(gdb *gorm.DB) {
-	statement := "create_hypertable('samples', 'timestamp')"
-	gdb.Select(statement)
+type TestDB struct{}
+
+func (tdb *TestDB) SetupDefaults() {
 }
 
-func SetupDefault(gdb *gorm.DB) {
-	Setup(gdb, &Samples{})
-	SetupHypertable(gdb)
-	Setup(gdb, &Predictor{})
+func (tdb *TestDB) AddSamples(samples ...Samples) {
 }

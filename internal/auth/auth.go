@@ -17,7 +17,7 @@ func Login(api *api.Client) (*api.TwitchLogin, error) {
 
 	login, err := api.Login(username, password)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("api authentication error: %w", err)
 	}
 
 	errCode := login.GetErrorCode()

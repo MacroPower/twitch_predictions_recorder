@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -11,39 +10,70 @@ import (
 	"syscall"
 	"time"
 
-	twitch "github.com/Adeithe/go-twitch"
-	"github.com/Adeithe/go-twitch/api/helix"
-	"golang.org/x/oauth2/clientcredentials"
-	oauth2 "golang.org/x/oauth2/twitch"
-
 	"github.com/MacroPower/twitch_predictions_recorder/internal/db"
 	"github.com/MacroPower/twitch_predictions_recorder/internal/event"
-)
+	"github.com/MacroPower/twitch_predictions_recorder/internal/log"
 
-var (
-	clientID = flag.String("client-id", "", "Client ID")
-	secret   = flag.String("secret", "", "Secret")
-
-	pgHost      = flag.String("pg-host", "127.0.0.1", "")
-	pgPort      = flag.Int("pg-port", 5432, "")
-	pgSSLMode   = flag.String("pg-sslmode", "disable", "")
-	pgUser      = flag.String("pg-user", "postgres", "")
-	pgPassword  = flag.String("pg-password", "", "")
-	pgDBName    = flag.String("pg-dbname", "timescale", "")
-	pgTimeZone  = flag.String("pg-timezone", "America/New_York", "")
-	pgTableName = flag.String("pg-tablename", "samples", "")
-
-	streamersFile = flag.String("streamers-file", "streamers.txt", "List of streamers to monitor")
+	twitch "github.com/Adeithe/go-twitch"
+	"github.com/Adeithe/go-twitch/api/helix"
+	"github.com/alecthomas/kong"
+	"golang.org/x/oauth2/clientcredentials"
+	oauth2 "golang.org/x/oauth2/twitch"
 )
 
 const (
-	streamerSegSize = 25
+	appName          = "twitch_predictions_recorder"
+	streamersSegSize = 25
 )
 
-func main() {
-	flag.Parse()
+var cli struct {
+	TwitchClientID string `help:"Twitch Client ID."`
+	TwitchSecret   string `help:"Twitch Secret."`
 
-	fileBytes, err := os.ReadFile(*streamersFile)
+	StreamersFile string `help:"List of streamers to monitor." default:"streamers.txt"`
+
+	Database struct {
+		Type string `help:"Database type. One of: [postgres, test]" default:"postgres"`
+
+		Postgres struct {
+			Host     string `help:"PG Host." default:"info"`
+			Port     int    `help:"PG Port." default:"5432"`
+			SSLMode  string `help:"PG SSL Mode." default:"prefer"`
+			User     string `help:"PG User."`
+			Password string `help:"PG Password."`
+			DBName   string `help:"PG DB Name." default:"postgres"`
+		} `prefix:"pg." embed:""`
+
+		TimeZone string `help:"Time zone name." default:"America/New_York"`
+	} `prefix:"db." embed:""`
+
+	Log struct {
+		Level  string `help:"Log level." default:"info"`
+		Format string `help:"Log format. One of: [logfmt, json]" default:"logfmt"`
+	} `prefix:"log." embed:""`
+}
+
+func main() {
+	cliCtx := kong.Parse(&cli, kong.Name(appName), kong.DefaultEnvars(""))
+
+	logLevel := &log.AllowedLevel{}
+	if err := logLevel.Set(cli.Log.Level); err != nil {
+		cliCtx.FatalIfErrorf(err)
+	}
+
+	logFormat := &log.AllowedFormat{}
+	if err := logFormat.Set(cli.Log.Format); err != nil {
+		cliCtx.FatalIfErrorf(err)
+	}
+
+	logger := log.New(&log.Config{
+		Level:  logLevel,
+		Format: logFormat,
+	})
+
+	log.Info(logger).Log("msg", fmt.Sprintf("Starting %s", appName))
+
+	fileBytes, err := os.ReadFile(cli.StreamersFile)
 	if err != nil {
 		panic(err)
 	}
@@ -53,16 +83,16 @@ func main() {
 	}
 
 	streamers := strings.FieldsFunc(strings.ReplaceAll(string(fileBytes), "\r", ""), splitFunc)
-	streamersSeg := make([][]string, (len(streamers)/streamerSegSize)+1)
+	streamersSeg := make([][]string, (len(streamers)/streamersSegSize)+1)
 	for i := range streamers {
-		streamersSeg[i/streamerSegSize] = append(streamersSeg[i/streamerSegSize], streamers[i])
+		streamersSeg[i/streamersSegSize] = append(streamersSeg[i/streamersSegSize], streamers[i])
 	}
 
-	api := twitch.API(*clientID)
+	api := twitch.API(cli.TwitchClientID)
 
 	oauth2Config := &clientcredentials.Config{
-		ClientID:     *clientID,
-		ClientSecret: *secret,
+		ClientID:     cli.TwitchClientID,
+		ClientSecret: cli.TwitchSecret,
 		TokenURL:     oauth2.Endpoint.TokenURL,
 	}
 
@@ -76,8 +106,8 @@ func main() {
 	ids := make(map[string]string)
 
 	for i, seg := range streamersSeg {
-		start, end := getSize(i, streamerSegSize, len(streamers))
-		fmt.Printf("Getting IDs for streamer batch %d (%d - %d)\n", i+1, start, end)
+		start, end := getSize(i, streamersSegSize, len(streamers))
+		log.Info(logger).Log("msg", fmt.Sprintf("Getting IDs for streamer batch %d (%d - %d)", i+1, start, end))
 
 		ud, err := api.Helix().GetUsers(helix.UserOpts{
 			Logins: seg,
@@ -91,20 +121,29 @@ func main() {
 		}
 	}
 
-	pgdb, err := db.PostgresDB{
-		Host:     *pgHost,
-		Port:     *pgPort,
-		SSLMode:  *pgSSLMode,
-		User:     *pgUser,
-		Password: *pgPassword,
-		DBName:   *pgDBName,
-		TimeZone: *pgTimeZone,
-	}.NewDB()
-	if err != nil {
-		panic(err)
+	var gdb db.DB
+
+	switch cli.Database.Type {
+	case "postgres":
+		pgdb := db.PostgresDB{
+			Host:     cli.Database.Postgres.Host,
+			Port:     cli.Database.Postgres.Port,
+			SSLMode:  cli.Database.Postgres.SSLMode,
+			User:     cli.Database.Postgres.User,
+			Password: cli.Database.Postgres.Password,
+			DBName:   cli.Database.Postgres.DBName,
+			TimeZone: cli.Database.TimeZone,
+		}
+		gdb, err = db.NewPostgresDB(pgdb)
+		if err != nil {
+			panic(err)
+		}
+
+	case "test":
+		gdb = &db.TestDB{}
 	}
 
-	db.SetupDefault(pgdb)
+	gdb.SetupDefaults()
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
@@ -112,52 +151,47 @@ func main() {
 	mgr := twitch.PubSub()
 
 	mgr.OnShardConnect(func(shard int) {
-		fmt.Printf("Shard #%d connected!\n", shard)
+		log.Info(logger).Log("msg", "Shard connected", "shard", shard)
 	})
 
 	mgr.OnShardReconnect(func(shard int) {
-		fmt.Printf("Shard #%d reconnected!\n", shard)
+		log.Info(logger).Log("msg", "Shard reconnected", "shard", shard)
 	})
 
 	mgr.OnShardMessage(func(shard int, topic string, data []byte) {
 		e := &event.Event{}
 		if err := json.Unmarshal(data, e); err != nil {
-			fmt.Println(err.Error())
+			log.Error(logger).Log("err", err.Error())
 		}
 
-		fmt.Printf("%s: %s\n", e.Type, e.Data.Event.ID)
+		log.Info(logger).Log("msg", fmt.Sprintf("%s: %s", e.Type, e.Data.Event.ID))
 		if e.Data.Event.Status == "RESOLVED" {
-			fmt.Printf("Shard #%d > %s %+v\n", shard, topic, e)
+			log.Info(logger).Log("msg", fmt.Sprintf("Shard #%d > %s %+v", shard, topic, e))
 
-			pgdb.Table(*pgTableName).Create([]db.Samples{
-				db.ToSamples(&e.Data, ids[e.Data.Event.ChannelID]),
-			})
+			gdb.AddSamples(db.ToSamples(&e.Data, ids[e.Data.Event.ChannelID]))
 		}
 	})
 
 	mgr.OnShardLatencyUpdate(func(shard int, latency time.Duration) {
-		fmt.Printf("Shard #%d has %.3fs ping!\n", shard, latency.Seconds())
+		log.Info(logger).Log("msg", "Shard updated", "shard", shard, "ping_ms", latency.Milliseconds())
 	})
 
 	mgr.OnShardDisconnect(func(shard int) {
-		fmt.Printf("Shard #%d disconnected!\n", shard)
+		log.Info(logger).Log("msg", "Shard disconnected", "shard", shard)
 	})
 
 	for id := range ids {
-		printErr(mgr.Listen("predictions-channel-v1", id))
+		err := mgr.Listen("predictions-channel-v1", id)
+		if err != nil {
+			log.Error(logger).Log("err", err)
+		}
 	}
 
-	fmt.Printf("Started listening to %d topics on %d shards!\n", mgr.GetNumTopics(), mgr.GetNumShards())
+	log.Info(logger).Log("msg", "Started listening", "topics", mgr.GetNumTopics(), "shards", mgr.GetNumShards())
 
 	<-sc
-	fmt.Println("Stopping...")
+	log.Info(logger).Log("msg", "Stopping")
 	mgr.Close()
-}
-
-func printErr(err error) {
-	if err != nil {
-		fmt.Println(err)
-	}
 }
 
 func getSize(iter int, size int, max int) (int, int) {
