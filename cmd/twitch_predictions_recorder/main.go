@@ -140,7 +140,16 @@ func main() {
 		}
 
 	case "test":
-		gdb = &db.TestDB{}
+		gdb = &db.TestDB{
+			TestFunc: func(samples ...db.Samples) {
+				jsonData, err := json.Marshal(samples)
+				if err != nil {
+					log.Error(logger).Log("msg", "Could not marshal sample data", "err", err)
+				}
+
+				log.Debug(logger).Log("msg", "Got samples", "data", string(jsonData))
+			},
+		}
 	}
 
 	gdb.SetupDefaults()
@@ -159,16 +168,27 @@ func main() {
 	})
 
 	mgr.OnShardMessage(func(shard int, topic string, data []byte) {
-		e := &event.Event{}
-		if err := json.Unmarshal(data, e); err != nil {
-			log.Error(logger).Log("err", err.Error())
+		msg := &event.Message{}
+		if err := json.Unmarshal(data, msg); err != nil {
+			log.Error(logger).Log("msg", "Error unmarshalling event", "err", err.Error())
+
+			return
 		}
 
-		log.Info(logger).Log("msg", fmt.Sprintf("%s: %s", e.Type, e.Data.Event.ID))
-		if e.Data.Event.Status == "RESOLVED" {
-			log.Info(logger).Log("msg", fmt.Sprintf("Shard #%d > %s %+v", shard, topic, e))
+		e := msg.Data.Event
+		channel := ids[e.ChannelID]
 
-			gdb.AddSamples(db.ToSamples(&e.Data, ids[e.Data.Event.ChannelID]))
+		log.Debug(logger).Log(
+			"msg", "Got message",
+			"channel", channel,
+			"shard", shard,
+			"topic", topic,
+			"type", msg.Type,
+			"status", e.Status,
+		)
+
+		if e.Status == "RESOLVED" {
+			gdb.AddSamples(db.ToSamples(&msg.Data, channel))
 		}
 	})
 

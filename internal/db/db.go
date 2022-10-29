@@ -60,10 +60,13 @@ func (gdb *GormDB) setup(obj interface{}) {
 	}
 }
 
-type TestDB struct{}
+type TestDB struct {
+	TestFunc func(...Samples)
+}
 
 func (tdb *TestDB) SetupDefaults() {
 }
 
 func (tdb *TestDB) AddSamples(samples ...Samples) {
+	tdb.TestFunc(samples...)
 }

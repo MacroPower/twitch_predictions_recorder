@@ -123,4 +123,4 @@ issues:
         - promlinter
     - linters:
         - errcheck
-      source: log\..+\.Log\(\"
+      source: log\..+\.Log\(
