@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-type Event struct {
+type Message struct {
 	Type string `json:"type"`
 	Data Data   `json:"data"`
 }
