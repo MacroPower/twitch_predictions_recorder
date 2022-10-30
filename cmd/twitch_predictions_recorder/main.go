@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -17,6 +18,9 @@ import (
 	twitch "github.com/Adeithe/go-twitch"
 	"github.com/Adeithe/go-twitch/api/helix"
 	"github.com/alecthomas/kong"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/oauth2/clientcredentials"
 	oauth2 "golang.org/x/oauth2/twitch"
 )
@@ -24,6 +28,46 @@ import (
 const (
 	appName          = "twitch_predictions_recorder"
 	streamersSegSize = 25
+)
+
+var (
+	messagesProcessed = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: appName,
+		Subsystem: "messages",
+		Name:      "processed_total",
+		Help:      "The total number of messages processed",
+	}, []string{
+		"channel",
+		"shard",
+		"status",
+	})
+
+	shardUpdates = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: appName,
+		Subsystem: "shard",
+		Name:      "updates_total",
+		Help:      "The total number of shard updates",
+	}, []string{
+		"shard",
+	})
+
+	shardReconnections = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: appName,
+		Subsystem: "shard",
+		Name:      "reconnections_total",
+		Help:      "The total number of shard reconnections",
+	}, []string{
+		"shard",
+	})
+
+	shardLatency = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: appName,
+		Subsystem: "shard",
+		Name:      "latency_seconds",
+		Help:      "The shard latency in seconds",
+	}, []string{
+		"shard",
+	})
 )
 
 var cli struct {
@@ -46,6 +90,13 @@ var cli struct {
 
 		TimeZone string `help:"Time zone name." default:"America/New_York"`
 	} `prefix:"db." embed:""`
+
+	Metrics struct {
+		Disable bool          `help:"Disable metrics."`
+		Path    string        `help:"Path to serve metrics on." default:"/metrics"`
+		Address string        `help:"Address to serve metrics on." default:":8080"`
+		Timeout time.Duration `help:"HTTP timeout." default:"60s"`
+	} `prefix:"metrics." embed:""`
 
 	Log struct {
 		Level  string `help:"Log level." default:"info"`
@@ -164,6 +215,7 @@ func main() {
 	})
 
 	mgr.OnShardReconnect(func(shard int) {
+		shardReconnections.WithLabelValues(fmt.Sprint(shard)).Inc()
 		log.Info(logger).Log("msg", "Shard reconnected", "shard", shard)
 	})
 
@@ -178,6 +230,7 @@ func main() {
 		e := msg.Data.Event
 		channel := ids[e.ChannelID]
 
+		messagesProcessed.WithLabelValues(channel, fmt.Sprint(shard), e.Status).Inc()
 		log.Debug(logger).Log(
 			"msg", "Got message",
 			"channel", channel,
@@ -193,12 +246,30 @@ func main() {
 	})
 
 	mgr.OnShardLatencyUpdate(func(shard int, latency time.Duration) {
+		shardUpdates.WithLabelValues(fmt.Sprint(shard)).Inc()
+		shardLatency.WithLabelValues(fmt.Sprint(shard)).Set(latency.Seconds())
 		log.Info(logger).Log("msg", "Shard updated", "shard", shard, "ping_ms", latency.Milliseconds())
 	})
 
 	mgr.OnShardDisconnect(func(shard int) {
 		log.Info(logger).Log("msg", "Shard disconnected", "shard", shard)
 	})
+
+	if !cli.Metrics.Disable {
+		http.Handle(cli.Metrics.Path, promhttp.Handler())
+		go func() {
+			log.Info(logger).Log("msg", "Starting metrics handler")
+			s := &http.Server{
+				Addr:         cli.Metrics.Address,
+				ReadTimeout:  cli.Metrics.Timeout,
+				WriteTimeout: cli.Metrics.Timeout,
+			}
+			if err := s.ListenAndServe(); err != nil {
+				log.Error(logger).Log("msg", "Error serving metrics", "err", err)
+			}
+			log.Info(logger).Log("msg", "Metrics handler terminated")
+		}()
+	}
 
 	for id := range ids {
 		err := mgr.Listen("predictions-channel-v1", id)
