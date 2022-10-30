@@ -71,10 +71,12 @@ var (
 )
 
 var cli struct {
-	TwitchClientID string `help:"Twitch Client ID."`
-	TwitchSecret   string `help:"Twitch Secret."`
+	Twitch struct {
+		ClientID string `help:"Twitch Client ID." required:""`
+		Secret   string `help:"Twitch Secret." required:""`
 
-	StreamersFile string `help:"List of streamers to monitor." default:"streamers.txt"`
+		StreamersFile string `help:"List of streamers to monitor." default:"streamers.txt"`
+	} `prefix:"twitch." embed:""`
 
 	Database struct {
 		Type string `help:"Database type. One of: [postgres, test]" default:"postgres"`
@@ -124,7 +126,7 @@ func main() {
 
 	log.Info(logger).Log("msg", fmt.Sprintf("Starting %s", appName))
 
-	fileBytes, err := os.ReadFile(cli.StreamersFile)
+	fileBytes, err := os.ReadFile(cli.Twitch.StreamersFile)
 	if err != nil {
 		panic(err)
 	}
@@ -139,11 +141,11 @@ func main() {
 		streamersSeg[i/streamersSegSize] = append(streamersSeg[i/streamersSegSize], streamers[i])
 	}
 
-	api := twitch.API(cli.TwitchClientID)
+	api := twitch.API(cli.Twitch.ClientID)
 
 	oauth2Config := &clientcredentials.Config{
-		ClientID:     cli.TwitchClientID,
-		ClientSecret: cli.TwitchSecret,
+		ClientID:     cli.Twitch.ClientID,
+		ClientSecret: cli.Twitch.Secret,
 		TokenURL:     oauth2.Endpoint.TokenURL,
 	}
 
