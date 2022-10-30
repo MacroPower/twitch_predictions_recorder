@@ -136,6 +136,12 @@ func main() {
 	}
 
 	streamers := strings.FieldsFunc(strings.ReplaceAll(string(fileBytes), "\r", ""), splitFunc)
+	if len(streamers) == 0 {
+		log.Error(logger).Log("msg", "No streamers to monitor, stopping")
+
+		os.Exit(1)
+	}
+
 	streamersSeg := make([][]string, (len(streamers)/streamersSegSize)+1)
 	for i := range streamers {
 		streamersSeg[i/streamersSegSize] = append(streamersSeg[i/streamersSegSize], streamers[i])
