@@ -31,6 +31,10 @@ Flags:
       --db.pg.password=STRING              PG Password ($DB_PG_PASSWORD).
       --db.pg.db-name="postgres"           PG DB Name ($DB_PG_DB_NAME).
       --db.time-zone="America/New_York"    Time zone name ($DB_TIME_ZONE).
+      --metrics.disable                    Disable metrics ($METRICS_DISABLE).
+      --metrics.path="/metrics"            Path to serve metrics on ($METRICS_PATH).
+      --metrics.address=":8080"            Address to serve metrics on ($METRICS_ADDRESS).
+      --metrics.timeout=60s                HTTP timeout ($METRICS_TIMEOUT).
       --log.level="info"                   Log level ($LOG_LEVEL).
       --log.format="logfmt"                Log format. One of: [logfmt, json] ($LOG_FORMAT)
 ```
