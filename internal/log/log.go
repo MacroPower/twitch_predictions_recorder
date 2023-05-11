@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package log defines standardized ways to initialize Go kit loggers.
-// It should typically only ever be imported by main packages.
 package log
 
 import (
@@ -39,6 +37,10 @@ var timestampFormat = log.TimestampFormat(
 	func() time.Time { return time.Now().UTC() },
 	"2006-01-02T15:04:05.000Z07:00",
 )
+
+type Logger interface {
+	Log(keyvals ...interface{}) error
+}
 
 // AllowedLevel is a settable identifier for the minimum level a log entry
 // must be have.
@@ -121,9 +123,14 @@ type Config struct {
 	Format *AllowedFormat
 }
 
+type SimpleLogger struct {
+	Base    log.Logger
+	Leveled log.Logger
+}
+
 // New returns a new leveled logger. Each logged line will be annotated
-// with a timestamp. The output always goes to stderr.
-func New(config *Config) log.Logger {
+// with a timestamp. The output always goes to stdout.
+func New(config *Config) *SimpleLogger {
 	var l log.Logger
 
 	if config.Format != nil && config.Format.s == jsonFormat {
@@ -139,22 +146,36 @@ func New(config *Config) log.Logger {
 		l = log.With(l, "ts", timestampFormat, "caller", log.DefaultCaller)
 	}
 
-	return l
+	lo := &SimpleLogger{
+		Base:    l,
+		Leveled: l,
+	}
+
+	return lo
+}
+
+// Log implements [log.Logger].
+func (l *SimpleLogger) Log(keyvals ...interface{}) error {
+	if err := l.Leveled.Log(keyvals...); err != nil {
+		return fmt.Errorf("log error: %w", err)
+	}
+
+	return nil
 }
 
 // NewDynamic returns a new leveled logger. Each logged line will be annotated
-// with a timestamp. The output always goes to stderr. Some properties can be
+// with a timestamp. The output always goes to stdout. Some properties can be
 // changed, like the level.
-func NewDynamic(config *Config) *Logger {
+func NewDynamic(config *Config) *DynamicLogger {
 	var l log.Logger
 
 	if config.Format != nil && config.Format.s == jsonFormat {
-		l = log.NewJSONLogger(log.NewSyncWriter(os.Stderr))
+		l = log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
 	} else {
-		l = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+		l = log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout))
 	}
 
-	lo := &Logger{
+	lo := &DynamicLogger{
 		Base:    l,
 		Leveled: l,
 	}
@@ -166,7 +187,7 @@ func NewDynamic(config *Config) *Logger {
 	return lo
 }
 
-type Logger struct {
+type DynamicLogger struct {
 	Base         log.Logger
 	Leveled      log.Logger
 	CurrentLevel *AllowedLevel
@@ -174,8 +195,8 @@ type Logger struct {
 	mtx sync.Mutex
 }
 
-// Log implements logger.Log.
-func (l *Logger) Log(keyvals ...interface{}) error {
+// Log implements [log.Logger].
+func (l *DynamicLogger) Log(keyvals ...interface{}) error {
 	l.mtx.Lock()
 	defer l.mtx.Unlock()
 
@@ -187,7 +208,7 @@ func (l *Logger) Log(keyvals ...interface{}) error {
 }
 
 // SetLevel changes the log level.
-func (l *Logger) SetLevel(lvl *AllowedLevel) {
+func (l *DynamicLogger) SetLevel(lvl *AllowedLevel) {
 	l.mtx.Lock()
 	defer l.mtx.Unlock()
 
@@ -207,21 +228,36 @@ func (l *Logger) SetLevel(lvl *AllowedLevel) {
 }
 
 // Error returns a logger that includes a Key/ErrorValue pair.
-func Error(logger log.Logger) log.Logger {
-	return log.WithPrefix(logger, level.Key(), level.ErrorValue())
+func Error(logger Logger) Logger {
+	return WithPrefix(logger, level.Key(), level.ErrorValue())
 }
 
 // Warn returns a logger that includes a Key/WarnValue pair.
-func Warn(logger log.Logger) log.Logger {
-	return log.WithPrefix(logger, level.Key(), level.WarnValue())
+func Warn(logger Logger) Logger {
+	return WithPrefix(logger, level.Key(), level.WarnValue())
 }
 
 // Info returns a logger that includes a Key/InfoValue pair.
-func Info(logger log.Logger) log.Logger {
-	return log.WithPrefix(logger, level.Key(), level.InfoValue())
+func Info(logger Logger) Logger {
+	return WithPrefix(logger, level.Key(), level.InfoValue())
 }
 
 // Debug returns a logger that includes a Key/DebugValue pair.
-func Debug(logger log.Logger) log.Logger {
-	return log.WithPrefix(logger, level.Key(), level.DebugValue())
+func Debug(logger Logger) Logger {
+	return WithPrefix(logger, level.Key(), level.DebugValue())
+}
+
+// WithPrefix wraps [log.WithPrefix].
+func WithPrefix(logger Logger, keyvals ...interface{}) Logger {
+	return log.WithPrefix(logger, keyvals...)
+}
+
+// With wraps [log.With].
+func With(logger Logger, keyvals ...interface{}) Logger {
+	return log.With(logger, keyvals...)
+}
+
+// WithSuffix wraps [log.WithSuffix].
+func WithSuffix(logger Logger, keyvals ...interface{}) Logger {
+	return log.WithSuffix(logger, keyvals...)
 }

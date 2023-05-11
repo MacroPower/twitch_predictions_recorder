@@ -26,3 +26,4 @@ vendor/
 # Data
 .private/
 streamers*.txt
+.env.json

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,60 +13,14 @@ import (
 	"github.com/MacroPower/twitch_predictions_recorder/internal/db"
 	"github.com/MacroPower/twitch_predictions_recorder/internal/event"
 	"github.com/MacroPower/twitch_predictions_recorder/internal/log"
+	"github.com/MacroPower/twitch_predictions_recorder/internal/twitch"
 
-	twitch "github.com/Adeithe/go-twitch"
-	"github.com/Adeithe/go-twitch/api/helix"
 	"github.com/alecthomas/kong"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"golang.org/x/oauth2/clientcredentials"
-	oauth2 "golang.org/x/oauth2/twitch"
 )
 
 const (
-	appName          = "twitch_predictions_recorder"
-	streamersSegSize = 25
-)
-
-var (
-	messagesProcessed = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: appName,
-		Subsystem: "messages",
-		Name:      "processed_total",
-		Help:      "The total number of messages processed",
-	}, []string{
-		"channel",
-		"shard",
-		"status",
-	})
-
-	shardUpdates = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: appName,
-		Subsystem: "shard",
-		Name:      "updates_total",
-		Help:      "The total number of shard updates",
-	}, []string{
-		"shard",
-	})
-
-	shardReconnections = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: appName,
-		Subsystem: "shard",
-		Name:      "reconnections_total",
-		Help:      "The total number of shard reconnections",
-	}, []string{
-		"shard",
-	})
-
-	shardLatency = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: appName,
-		Subsystem: "shard",
-		Name:      "latency_seconds",
-		Help:      "The shard latency in seconds",
-	}, []string{
-		"shard",
-	})
+	appName = "twitch_predictions_recorder"
 )
 
 var cli struct {
@@ -75,7 +28,8 @@ var cli struct {
 		ClientID string `help:"Twitch Client ID." required:""`
 		Secret   string `help:"Twitch Secret." required:""`
 
-		StreamersFile string `help:"List of streamers to monitor." default:"streamers.txt"`
+		Streamers     []string `help:"List of streamers to monitor."`
+		StreamersFile string   `help:"List of streamers to monitor." default:"streamers.txt"`
 	} `prefix:"twitch." embed:""`
 
 	Database struct {
@@ -107,7 +61,12 @@ var cli struct {
 }
 
 func main() {
-	cliCtx := kong.Parse(&cli, kong.Name(appName), kong.DefaultEnvars(""))
+	cliCtx := kong.Parse(
+		&cli,
+		kong.Name(appName),
+		kong.DefaultEnvars(""),
+		kong.Configuration(kong.JSON, ".env.json"),
+	)
 
 	logLevel := &log.AllowedLevel{}
 	if err := logLevel.Set(cli.Log.Level); err != nil {
@@ -126,62 +85,29 @@ func main() {
 
 	log.Info(logger).Log("msg", fmt.Sprintf("Starting %s", appName))
 
-	fileBytes, err := os.ReadFile(cli.Twitch.StreamersFile)
-	if err != nil {
-		panic(err)
+	var err error
+	streamers := cli.Twitch.Streamers
+	if len(streamers) == 0 {
+		log.Info(logger).Log("msg", "No streamers provided via arguments, reading from file")
+		streamers, err = getStreamersFromFile(cli.Twitch.StreamersFile, logger)
+		if err != nil {
+			panic(err)
+		}
 	}
-
-	splitFunc := func(c rune) bool {
-		return c == '\n'
-	}
-
-	streamers := strings.FieldsFunc(strings.ReplaceAll(string(fileBytes), "\r", ""), splitFunc)
 	if len(streamers) == 0 {
 		log.Error(logger).Log("msg", "No streamers to monitor, stopping")
 
 		os.Exit(1)
 	}
 
-	streamersSeg := make([][]string, (len(streamers)/streamersSegSize)+1)
-	for i := range streamers {
-		streamersSeg[i/streamersSegSize] = append(streamersSeg[i/streamersSegSize], streamers[i])
-	}
-
-	api := twitch.API(cli.Twitch.ClientID)
-
-	oauth2Config := &clientcredentials.Config{
-		ClientID:     cli.Twitch.ClientID,
-		ClientSecret: cli.Twitch.Secret,
-		TokenURL:     oauth2.Endpoint.TokenURL,
-	}
-
-	token, err := oauth2Config.Token(context.Background())
+	api, err := twitch.NewAPIClient(cli.Twitch.ClientID, cli.Twitch.Secret)
 	if err != nil {
-		panic(err)
-	}
+		log.Error(logger).Log("msg", "Failed to create Twitch API client", "err", err)
 
-	api = api.NewBearer(token.AccessToken)
-
-	ids := make(map[string]string)
-
-	for i, seg := range streamersSeg {
-		start, end := getSize(i, streamersSegSize, len(streamers))
-		log.Info(logger).Log("msg", fmt.Sprintf("Getting IDs for streamer batch %d (%d - %d)", i+1, start, end))
-
-		ud, err := api.Helix().GetUsers(helix.UserOpts{
-			Logins: seg,
-		})
-		if err != nil {
-			panic(err)
-		}
-
-		for _, d := range ud.Data {
-			ids[d.ID] = d.DisplayName
-		}
+		os.Exit(1)
 	}
 
 	var gdb db.DB
-
 	switch cli.Database.Type {
 	case "postgres":
 		pgdb := db.PostgresDB{
@@ -197,7 +123,6 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-
 	case "test":
 		gdb = &db.TestDB{
 			TestFunc: func(samples ...db.Samples) {
@@ -216,51 +141,10 @@ func main() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 
-	mgr := twitch.PubSub()
-
-	mgr.OnShardConnect(func(shard int) {
-		log.Info(logger).Log("msg", "Shard connected", "shard", shard)
-	})
-
-	mgr.OnShardReconnect(func(shard int) {
-		shardReconnections.WithLabelValues(fmt.Sprint(shard)).Inc()
-		log.Info(logger).Log("msg", "Shard reconnected", "shard", shard)
-	})
-
-	mgr.OnShardMessage(func(shard int, topic string, data []byte) {
-		msg := &event.Message{}
-		if err := json.Unmarshal(data, msg); err != nil {
-			log.Error(logger).Log("msg", "Error unmarshalling event", "err", err.Error())
-
-			return
-		}
-
-		e := msg.Data.Event
-		channel := ids[e.ChannelID]
-
-		messagesProcessed.WithLabelValues(channel, fmt.Sprint(shard), e.Status).Inc()
-		log.Debug(logger).Log(
-			"msg", "Got message",
-			"channel", channel,
-			"shard", shard,
-			"topic", topic,
-			"type", msg.Type,
-			"status", e.Status,
-		)
-
-		if e.Status == "RESOLVED" {
-			gdb.AddSamples(db.ToSamples(&msg.Data, channel))
-		}
-	})
-
-	mgr.OnShardLatencyUpdate(func(shard int, latency time.Duration) {
-		shardUpdates.WithLabelValues(fmt.Sprint(shard)).Inc()
-		shardLatency.WithLabelValues(fmt.Sprint(shard)).Set(latency.Seconds())
-		log.Info(logger).Log("msg", "Shard updated", "shard", shard, "ping_ms", latency.Milliseconds())
-	})
-
-	mgr.OnShardDisconnect(func(shard int) {
-		log.Info(logger).Log("msg", "Shard disconnected", "shard", shard)
+	listener := twitch.NewEventListener(api, logger, streamers...)
+	listener.Listen(func(d event.Event) error {
+		gdb.AddSamples(db.ToSamples(&d.Message.Data, d.StreamerName))
+		return nil
 	})
 
 	if !cli.Metrics.Disable {
@@ -279,27 +163,22 @@ func main() {
 		}()
 	}
 
-	for id := range ids {
-		err := mgr.Listen("predictions-channel-v1", id)
-		if err != nil {
-			log.Error(logger).Log("err", err)
-		}
-	}
-
-	log.Info(logger).Log("msg", "Started listening", "topics", mgr.GetNumTopics(), "shards", mgr.GetNumShards())
-
 	<-sc
 	log.Info(logger).Log("msg", "Stopping")
-	mgr.Close()
+	listener.Close()
 }
 
-func getSize(iter int, size int, max int) (int, int) {
-	start := iter * size
-	end := (iter + 1) * size
-
-	if end > max {
-		return start, max
+func getStreamersFromFile(file string, logger log.Logger) ([]string, error) {
+	fileBytes, err := os.ReadFile(file)
+	if err != nil {
+		return nil, err
 	}
 
-	return start, end - 1
+	splitFunc := func(c rune) bool {
+		return c == '\n'
+	}
+
+	streamers := strings.FieldsFunc(strings.ReplaceAll(string(fileBytes), "\r", ""), splitFunc)
+
+	return streamers, nil
 }
