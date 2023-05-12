@@ -10,6 +10,7 @@ import (
 	"github.com/Adeithe/go-twitch/api/helix"
 	"github.com/Adeithe/go-twitch/pubsub"
 	"github.com/MacroPower/twitch_predictions_recorder/internal/event"
+	"github.com/MacroPower/twitch_predictions_recorder/internal/eventraw"
 	"github.com/MacroPower/twitch_predictions_recorder/internal/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -126,7 +127,7 @@ func (te *EventListener) Listen(dataFunc func(event.Event) error) error {
 	streamerIdName := te.GetIDMap(te.streamers...)
 
 	te.twitchClient.OnShardMessage(func(shard int, topic string, data []byte) {
-		msg := &event.Message{}
+		msg := &eventraw.Message{}
 		if err := json.Unmarshal(data, msg); err != nil {
 			log.Error(te.logger).Log("msg", "Error unmarshalling event", "err", err.Error())
 
@@ -144,10 +145,7 @@ func (te *EventListener) Listen(dataFunc func(event.Event) error) error {
 			"type", msg.Type,
 			"status", msg.Data.Event.Status,
 		)
-		if err := dataFunc(event.Event{
-			StreamerName: streamer,
-			Message:      msg,
-		}); err != nil {
+		if err := dataFunc(event.ConvertMessage(msg, event.EventMixin{ChannelName: streamer})); err != nil {
 			log.Error(te.logger).Log("err", err)
 		}
 	})

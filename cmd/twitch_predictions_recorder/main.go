@@ -33,7 +33,7 @@ var cli struct {
 	} `prefix:"twitch." embed:""`
 
 	Database struct {
-		Type string `help:"Database type. One of: [postgres, test]" default:"postgres"`
+		Type string `help:"Database type. One of: [postgres, sqlite, test]" default:"sqlite"`
 
 		Postgres struct {
 			Host     string `help:"PG Host." default:"info"`
@@ -43,6 +43,10 @@ var cli struct {
 			Password string `help:"PG Password."`
 			DBName   string `help:"PG DB Name." default:"postgres"`
 		} `prefix:"pg." embed:""`
+
+		SQLite struct {
+			Path string `help:"Path to SQLite database." default:"twitch_predictions_recorder.db"`
+		} `prefix:"sqlite." embed:""`
 
 		TimeZone string `help:"Time zone name." default:"America/New_York"`
 	} `prefix:"db." embed:""`
@@ -110,7 +114,7 @@ func main() {
 	var gdb db.DB
 	switch cli.Database.Type {
 	case "postgres":
-		pgdb := db.PostgresDB{
+		gdb, err = db.NewPostgresDB(db.PostgresDBSettings{
 			Host:     cli.Database.Postgres.Host,
 			Port:     cli.Database.Postgres.Port,
 			SSLMode:  cli.Database.Postgres.SSLMode,
@@ -118,20 +122,24 @@ func main() {
 			Password: cli.Database.Postgres.Password,
 			DBName:   cli.Database.Postgres.DBName,
 			TimeZone: cli.Database.TimeZone,
+		})
+		if err != nil {
+			panic(err)
 		}
-		gdb, err = db.NewPostgresDB(pgdb)
+	case "sqlite":
+		gdb, err = db.NewSqliteDB(cli.Database.SQLite.Path)
 		if err != nil {
 			panic(err)
 		}
 	case "test":
-		gdb = &db.TestDB{
-			TestFunc: func(samples ...db.Samples) {
-				jsonData, err := json.Marshal(samples)
+		gdb = &db.CallbackDB{
+			Callback: func(events ...event.Event) {
+				jsonData, err := json.Marshal(events)
 				if err != nil {
 					log.Error(logger).Log("msg", "Could not marshal sample data", "err", err)
 				}
 
-				log.Debug(logger).Log("msg", "Got samples", "data", string(jsonData))
+				log.Debug(logger).Log("msg", "Got events", "data", string(jsonData))
 			},
 		}
 	}
@@ -143,7 +151,7 @@ func main() {
 
 	listener := twitch.NewEventListener(api, logger, streamers...)
 	listener.Listen(func(d event.Event) error {
-		gdb.AddSamples(db.ToSamples(&d.Message.Data, d.StreamerName))
+		gdb.AddEvents(d)
 		return nil
 	})
 

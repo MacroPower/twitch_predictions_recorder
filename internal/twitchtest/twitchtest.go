@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/MacroPower/twitch_predictions_recorder/internal/event"
+	"github.com/MacroPower/twitch_predictions_recorder/internal/eventraw"
 )
 
 type TestListener struct {
@@ -22,15 +23,12 @@ func (l *TestListener) Listen(dataFunc func(event.Event) error) error {
 	scanner := bufio.NewScanner(l.Reader)
 
 	for scanner.Scan() {
-		msg := event.Message{}
+		msg := eventraw.Message{}
 		if err := json.Unmarshal(scanner.Bytes(), &msg); err != nil {
 			return err
 		}
 
-		if err := dataFunc(event.Event{
-			StreamerName: "test",
-			Message:      &msg,
-		}); err != nil {
+		if err := dataFunc(event.ConvertMessage(&msg, event.EventMixin{ChannelName: "test"})); err != nil {
 			return err
 		}
 	}
