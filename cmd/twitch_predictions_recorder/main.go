@@ -150,10 +150,13 @@ func main() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 
 	listener := twitch.NewEventListener(api, logger, streamers...)
-	listener.Listen(func(d event.Event) error {
+	err = listener.Listen(func(d event.Event) error {
 		gdb.AddEvents(d)
 		return nil
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	if !cli.Metrics.Disable {
 		http.Handle(cli.Metrics.Path, promhttp.Handler())

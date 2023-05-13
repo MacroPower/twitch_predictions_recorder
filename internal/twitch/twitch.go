@@ -20,6 +20,7 @@ const (
 	appName         = "twitch_predictions_recorder"
 	streamerSegSize = 25
 	maxShards       = 10
+	topic           = "predictions-channel-v1"
 )
 
 var (
@@ -151,7 +152,7 @@ func (te *EventListener) Listen(dataFunc func(event.Event) error) error {
 	})
 
 	for id := range streamerIdName {
-		if err := te.twitchClient.Listen("predictions-streamer-v1", id); err != nil {
+		if err := te.twitchClient.Listen(topic, id); err != nil {
 			return err
 		}
 	}
