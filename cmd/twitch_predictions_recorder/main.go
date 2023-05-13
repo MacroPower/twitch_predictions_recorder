@@ -45,7 +45,7 @@ var cli struct {
 		} `prefix:"pg." embed:""`
 
 		SQLite struct {
-			Path string `help:"Path to SQLite database." default:"twitch_predictions_recorder.db"`
+			Path string `help:"Path to SQLite database." default:"twitch_predictions_recorder.sqlite"`
 		} `prefix:"sqlite." embed:""`
 
 		TimeZone string `help:"Time zone name." default:"America/New_York"`

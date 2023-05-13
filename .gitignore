@@ -27,3 +27,4 @@ vendor/
 .private/
 streamers*.txt
 .env.json
+*.sqlite
