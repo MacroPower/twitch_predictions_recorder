@@ -3,7 +3,7 @@ module github.com/MacroPower/twitch_predictions_recorder
 go 1.19
 
 require (
-	github.com/Adeithe/go-twitch v0.1.3
+	github.com/Adeithe/go-twitch v0.1.4-0.20230104225120-eee71bbf962d
 	github.com/alecthomas/kong v0.7.1
 	github.com/go-kit/log v0.2.1
 	github.com/prometheus/client_golang v1.15.1

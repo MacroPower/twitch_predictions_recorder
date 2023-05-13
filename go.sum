@@ -1,5 +1,7 @@
-github.com/Adeithe/go-twitch v0.1.3 h1:8Q23jWCX2QnoMo4FddkUmQyzVoh/e7NTWE0E93nPi+s=
-github.com/Adeithe/go-twitch v0.1.3/go.mod h1:prRQ2xlTM0BVcQYx+WGK7GO0jw2uGOWCHGUCJIg1910=
+github.com/Adeithe/go-twitch v0.1.2-0.20211012072244-0dc41887ad7b h1:49iwY30kN6zUUJ2b3/Qipp4TN0PB5Y0SrV+QirERltw=
+github.com/Adeithe/go-twitch v0.1.2-0.20211012072244-0dc41887ad7b/go.mod h1:prRQ2xlTM0BVcQYx+WGK7GO0jw2uGOWCHGUCJIg1910=
+github.com/Adeithe/go-twitch v0.1.4-0.20230104225120-eee71bbf962d h1:AuiUuG5Jcb9465974wn7G/g08y32gQoPpe0wJ7Nstr8=
+github.com/Adeithe/go-twitch v0.1.4-0.20230104225120-eee71bbf962d/go.mod h1:prRQ2xlTM0BVcQYx+WGK7GO0jw2uGOWCHGUCJIg1910=
 github.com/alecthomas/assert/v2 v2.1.0 h1:tbredtNcQnoSd3QBhQWI7QZ3XHOVkw1Moklp2ojoH/0=
 github.com/alecthomas/kong v0.7.1 h1:azoTh0IOfwlAX3qN9sHWTxACE2oV8Bg2gAwBsMwDQY4=
 github.com/alecthomas/kong v0.7.1/go.mod h1:n1iCIO2xS46oE8ZfYCNDqdR0b0wZNrXAIAqro/2132U=
