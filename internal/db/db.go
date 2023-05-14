@@ -19,14 +19,16 @@ func (gdb *GormDB) SetupDefaults() {
 	gdb.setup(&event.Event{})
 	gdb.setup(&event.EventState{})
 	gdb.setup(&event.Outcome{})
+	gdb.setup(&event.OutcomeState{})
 	gdb.setup(&event.Predictor{})
+	gdb.setup(&event.PredictorState{})
 	gdb.setup(&event.User{})
 }
 
 func (gdb *GormDB) AddEvents(events ...event.Event) {
 	gdb.db.Clauses(clause.OnConflict{
 		UpdateAll: true,
-	}).Table("events").Create(events)
+	}).Create(events)
 }
 
 func (gdb *GormDB) setup(obj interface{}) {

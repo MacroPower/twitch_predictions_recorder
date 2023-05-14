@@ -1,6 +1,10 @@
 package event
 
-import "github.com/MacroPower/twitch_predictions_recorder/internal/eventraw"
+import (
+	"time"
+
+	"github.com/MacroPower/twitch_predictions_recorder/internal/eventraw"
+)
 
 type EventMixin struct {
 	ChannelName string `json:"channel_name"`
@@ -26,7 +30,7 @@ func ConvertMessage(m *eventraw.Message, cm EventMixin) Event {
 func convertEventState(m *eventraw.Message) EventState {
 	var outcomes []Outcome
 	for _, o := range m.Data.Event.Outcomes {
-		outcomes = append(outcomes, convertOutcome(o, m.Data.Event.ID))
+		outcomes = append(outcomes, convertOutcome(o, m.Data.Timestamp))
 	}
 
 	return EventState{
@@ -45,38 +49,50 @@ func convertUser(u eventraw.User) User {
 	}
 }
 
-func convertOutcome(o eventraw.Outcome, eventID string) Outcome {
+func convertOutcome(o eventraw.Outcome, timestamp time.Time) Outcome {
+	return Outcome{
+		ID:            o.ID,
+		Color:         o.Color,
+		Title:         o.Title,
+		BadgeVersion:  o.Badge.Version,
+		BadgeSetID:    o.Badge.SetID,
+		OutcomeStates: []OutcomeState{convertOutcomeState(o, timestamp)},
+	}
+}
+
+func convertOutcomeState(o eventraw.Outcome, timestamp time.Time) OutcomeState {
 	var topPredictors []Predictor
 	for _, p := range o.TopPredictors {
 		topPredictors = append(topPredictors, convertPredictor(p))
 	}
 
-	return Outcome{
-		ID:            o.ID,
-		EventID:       eventID,
-		Color:         o.Color,
-		Title:         o.Title,
+	return OutcomeState{
+		Timestamp:     timestamp,
 		TotalPoints:   o.TotalPoints,
 		TotalUsers:    o.TotalUsers,
 		TopPredictors: topPredictors,
-		BadgeVersion:  o.Badge.Version,
-		BadgeSetID:    o.Badge.SetID,
 	}
 }
 
 func convertPredictor(p eventraw.Predictor) Predictor {
 	return Predictor{
-		ID:          p.ID,
-		EventID:     p.EventID,
-		OutcomeID:   p.OutcomeID,
-		ChannelID:   p.ChannelID,
-		Points:      p.Points,
-		PredictedAt: p.PredictedAt,
-		UpdatedAt:   p.UpdatedAt,
+		ID:        p.ID,
+		EventID:   p.EventID,
+		OutcomeID: p.OutcomeID,
+		ChannelID: p.ChannelID,
 		User: User{
 			UserID:          p.UserID,
 			UserDisplayName: p.UserDisplayName,
 		},
+		PredictorStates: []PredictorState{convertPredictorState(p)},
+	}
+}
+
+func convertPredictorState(p eventraw.Predictor) PredictorState {
+	return PredictorState{
+		Points:               p.Points,
+		PredictedAt:          p.PredictedAt,
+		UpdatedAt:            p.UpdatedAt,
 		ResultType:           p.Result.Type,
 		ResultPointsWon:      p.Result.PointsWon,
 		ResultIsAcknowledged: p.Result.IsAcknowledged,
