@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/MacroPower/twitch_predictions_recorder/internal/api"
 	"github.com/MacroPower/twitch_predictions_recorder/internal/db"
 	"github.com/MacroPower/twitch_predictions_recorder/internal/event"
 	"github.com/MacroPower/twitch_predictions_recorder/internal/log"
@@ -110,7 +111,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	api, err := twitch.NewAPIClient(cli.Twitch.ClientID, cli.Twitch.Secret)
+	twitchAPI, err := twitch.NewAPIClient(cli.Twitch.ClientID, cli.Twitch.Secret)
 	if err != nil {
 		log.Error(logger).Log("msg", "Failed to create Twitch API client", "err", err)
 
@@ -157,7 +158,7 @@ func main() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 
-	listener := twitch.NewEventListener(api, logger, streamers...)
+	listener := twitch.NewEventListener(twitchAPI, logger, streamers...)
 	err = listener.Listen(func(d event.Event) error {
 		gdb.AddEvents(d)
 		return nil
@@ -183,26 +184,15 @@ func main() {
 	}
 
 	if !cli.API.Disable {
-		http.HandleFunc("/api/v1/summary", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			s, _, err := gdb.GetSummary()
-			if err != nil {
-				log.Error(logger).Log("msg", "Error getting summary", "err", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			data, err := json.Marshal(s)
-			if err != nil {
-				log.Error(logger).Log("msg", "Error marshaling summary", "err", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			w.Write(data)
-		})
+		mux, err := api.Router(gdb, logger)
+		if err != nil {
+			panic(err)
+		}
 		go func() {
 			log.Info(logger).Log("msg", "Starting API handler")
 			s := &http.Server{
 				Addr:         cli.API.Address,
+				Handler:      mux,
 				ReadTimeout:  cli.API.Timeout,
 				WriteTimeout: cli.API.Timeout,
 			}
