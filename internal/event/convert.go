@@ -62,8 +62,10 @@ func convertOutcome(o eventraw.Outcome, timestamp time.Time) Outcome {
 
 func convertOutcomeState(o eventraw.Outcome, timestamp time.Time) OutcomeState {
 	var topPredictors []Predictor
+	var resultType string
 	for _, p := range o.TopPredictors {
 		topPredictors = append(topPredictors, convertPredictor(p))
+		resultType = p.Result.Type
 	}
 
 	return OutcomeState{
@@ -71,6 +73,7 @@ func convertOutcomeState(o eventraw.Outcome, timestamp time.Time) OutcomeState {
 		TotalPoints:   o.TotalPoints,
 		TotalUsers:    o.TotalUsers,
 		TopPredictors: topPredictors,
+		ResultType:    resultType,
 	}
 }
 

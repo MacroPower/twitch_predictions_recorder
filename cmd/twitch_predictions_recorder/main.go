@@ -51,10 +51,16 @@ var cli struct {
 		TimeZone string `help:"Time zone name." default:"America/New_York"`
 	} `prefix:"db." embed:""`
 
+	API struct {
+		Disable bool          `help:"Disable API."`
+		Address string        `help:"Address to serve API on." default:":8080"`
+		Timeout time.Duration `help:"HTTP timeout." default:"60s"`
+	} `prefix:"api." embed:""`
+
 	Metrics struct {
 		Disable bool          `help:"Disable metrics."`
 		Path    string        `help:"Path to serve metrics on." default:"/metrics"`
-		Address string        `help:"Address to serve metrics on." default:":8080"`
+		Address string        `help:"Address to serve metrics on." default:":8081"`
 		Timeout time.Duration `help:"HTTP timeout." default:"60s"`
 	} `prefix:"metrics." embed:""`
 
@@ -133,13 +139,15 @@ func main() {
 		}
 	case "test":
 		gdb = &db.CallbackDB{
-			Callback: func(events ...event.Event) {
+			Callback: func(events ...event.Event) error {
 				jsonData, err := json.Marshal(events)
 				if err != nil {
 					log.Error(logger).Log("msg", "Could not marshal sample data", "err", err)
+					return err
 				}
 
 				log.Debug(logger).Log("msg", "Got events", "data", string(jsonData))
+				return nil
 			},
 		}
 	}
@@ -171,6 +179,37 @@ func main() {
 				log.Error(logger).Log("msg", "Error serving metrics", "err", err)
 			}
 			log.Info(logger).Log("msg", "Metrics handler terminated")
+		}()
+	}
+
+	if !cli.API.Disable {
+		http.HandleFunc("/api/v1/summary", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			s, _, err := gdb.GetSummary()
+			if err != nil {
+				log.Error(logger).Log("msg", "Error getting summary", "err", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			data, err := json.Marshal(s)
+			if err != nil {
+				log.Error(logger).Log("msg", "Error marshaling summary", "err", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			w.Write(data)
+		})
+		go func() {
+			log.Info(logger).Log("msg", "Starting API handler")
+			s := &http.Server{
+				Addr:         cli.API.Address,
+				ReadTimeout:  cli.API.Timeout,
+				WriteTimeout: cli.API.Timeout,
+			}
+			if err := s.ListenAndServe(); err != nil {
+				log.Error(logger).Log("msg", "Error serving API", "err", err)
+			}
+			log.Info(logger).Log("msg", "API handler terminated")
 		}()
 	}
 

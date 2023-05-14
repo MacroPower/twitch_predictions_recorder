@@ -54,6 +54,7 @@ type OutcomeState struct {
 	TotalPoints   int         `json:"total_points"`
 	TotalUsers    int         `json:"total_users"`
 	TopPredictors []Predictor `json:"top_predictors" gorm:"foreignKey:OutcomeStateID"`
+	ResultType    string      `json:"result_type"`
 }
 
 type Predictor struct {

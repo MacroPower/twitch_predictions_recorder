@@ -11,10 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const dbPath = "test.sqlite"
+
 func TestSqlite(t *testing.T) {
 	t.Parallel()
 
-	db, err := db.NewSqliteDB("test.sqlite")
+	db, err := db.NewSqliteDB(dbPath)
 	require.NoError(t, err)
 
 	db.SetupDefaults()
@@ -28,4 +30,12 @@ func TestSqlite(t *testing.T) {
 
 		return nil
 	})
+}
+
+func TestGet(t *testing.T) {
+	db, err := db.NewSqliteDB(dbPath)
+	require.NoError(t, err)
+
+	_, _, err = db.GetSummary()
+	require.NoError(t, err)
 }
