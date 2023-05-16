@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/MacroPower/twitch_predictions_recorder/internal/api/models"
 	"github.com/MacroPower/twitch_predictions_recorder/internal/event"
@@ -66,6 +67,7 @@ func (gdb *GormDB) GetSummary() ([]models.EventSummary, string, error) {
 		ChannelName             string
 		PredictionWindowSeconds int
 		Title                   string
+		Timestamp               string
 		Status                  string
 		OutcomeColor            string
 		OutcomeTitle            string
@@ -84,6 +86,7 @@ func (gdb *GormDB) GetSummary() ([]models.EventSummary, string, error) {
 			"events.channel_name AS channel_name",
 			"events.prediction_window_seconds AS prediction_window_seconds",
 			"events.title AS title",
+			"event_states.timestamp AS timestamp",
 			"event_states.status AS status",
 			"outcomes.color AS outcome_color",
 			"outcomes.title AS outcome_title",
@@ -95,7 +98,7 @@ func (gdb *GormDB) GetSummary() ([]models.EventSummary, string, error) {
 		).
 		Table("events").
 		Joins("JOIN (?) AS event_states ON events.id = event_states.event_id", session.
-			Select("id", "event_id", "status", "max(timestamp)").
+			Select("id", "event_id", "status", "max(timestamp) AS timestamp").
 			Table("event_states").
 			Group("event_id"),
 		).
@@ -113,8 +116,13 @@ func (gdb *GormDB) GetSummary() ([]models.EventSummary, string, error) {
 	rr := map[string]*models.EventSummary{}
 	for _, r := range dbResults {
 		if _, ok := rr[r.ID]; !ok {
+			ts, err := time.Parse("2006-01-02 15:04:05.999999999Z07:00", r.Timestamp)
+			if err != nil {
+				return nil, "", err
+			}
 			rr[r.ID] = &models.EventSummary{
 				ID:                      r.ID,
+				Timestamp:               ts,
 				ChannelName:             r.ChannelName,
 				PredictionWindowSeconds: r.PredictionWindowSeconds,
 				Title:                   r.Title,

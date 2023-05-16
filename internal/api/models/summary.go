@@ -1,7 +1,10 @@
 package models
 
+import "time"
+
 type EventSummary struct {
 	ID                      string           `json:"id"`
+	Timestamp               time.Time        `json:"timestamp"`
 	ChannelName             string           `json:"channel_name"`
 	PredictionWindowSeconds int              `json:"prediction_window_seconds"`
 	Title                   string           `json:"title"`
