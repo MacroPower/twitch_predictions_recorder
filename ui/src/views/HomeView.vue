@@ -1,17 +1,17 @@
 <template>
   <div class="home">
-    <EventSummary />
+    <PredictionHistory />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import EventSummary from "@/components/EventSummary.vue"; // @ is an alias to /src
+import PredictionHistory from "@/components/PredictionHistory.vue"; // @ is an alias to /src
 
 export default defineComponent({
   name: "HomeView",
   components: {
-    EventSummary,
+    PredictionHistory,
   },
 });
 </script>

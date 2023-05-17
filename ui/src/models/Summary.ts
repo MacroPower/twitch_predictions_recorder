@@ -1,14 +1,5 @@
 import Model from "./Model";
-
-interface Outcome {
-  color: string;
-  title: string;
-  badge_version: string;
-  badge_set_id: string;
-  total_points: number;
-  total_users: number;
-  result_type: string;
-}
+import Outcome from "./Outcome";
 
 interface Summary {
   id: string;
@@ -55,14 +46,10 @@ class Summary extends Model {
 
   outcomeSum() {
     // Returns an Outcome object with the sum of all outcomes
-    const sum: Outcome = {
-      color: "",
+    const sum = {
       title: "Total",
-      badge_version: "",
-      badge_set_id: "",
       total_points: 0,
       total_users: 0,
-      result_type: "",
     };
     this.outcomes.forEach((outcome) => {
       sum.total_points += outcome.total_points;
