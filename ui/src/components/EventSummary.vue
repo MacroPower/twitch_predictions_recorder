@@ -2,63 +2,176 @@
   <div class="summary">
     <h1>History</h1>
     <button @click="getSummary">Refresh</button>
-    <div class="predictionList">
-      <div
-        class="prediction"
-        v-for="summary in summaries"
-        :key="summary.timestamp"
-      >
-        <div class="predictionTitle">
-          <h3>{{ summary.title }}</h3>
-          <h5>{{ summary.status }}</h5>
-        </div>
-        <div
-          class="predictionOutcome"
-          v-for="outcome in summary.getOutcomes()"
-          :key="outcome.badge_version"
-        >
-          <div class="predictionOutcomeDetails">
-            <p>{{ outcome.total_points.toLocaleString() }}</p>
-            <p>
-              {{
-                getReturn(
-                  outcome.total_points,
-                  summary.outcomeSum().total_points
-                )
-              }}
-            </p>
-            <p>{{ outcome.total_users.toLocaleString() }}</p>
-            <p>250k</p>
-          </div>
-          <div class="predictionOutcomeSummary">
-            <p :style="{ fontSize: '125%', color: getColor(outcome.color) }">
-              {{ outcome.result_type || "~" }} / {{ outcome.title }}
-            </p>
-            <p :style="{ fontSize: '225%', color: getColor(outcome.color) }">
-              {{
-                getPercent(
-                  outcome.total_points,
-                  summary.outcomeSum().total_points
-                )
-              }}
-            </p>
-            <p>
-              {{
-                getPercentProgress(
-                  outcome.total_points,
-                  summary.outcomeSum().total_points
-                )
-              }}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+
+    <n-layout embedded content-style="padding: 24px;">
+      <n-space vertical>
+        <n-card v-for="summary in summaries" :key="summary.timestamp">
+          <n-grid cols="4" x-gap="24" y-gap="16">
+            <n-grid-item :span="2">
+              <n-space vertical>
+                <h3>{{ summary.title }}</h3>
+                <span
+                  >{{ summary.status }} @
+                  {{ summary.getDate().toLocaleString() }}</span
+                >
+              </n-space>
+            </n-grid-item>
+            <n-grid-item
+              v-for="outcome in summary.getOutcomes()"
+              :key="outcome.badge_version"
+            >
+              <n-grid x-gap="0" :cols="2">
+                <n-grid-item>
+                  <div class="prediction-outcome-stats">
+                    <n-space vertical :size="[0, 0]">
+                      <n-tag
+                        :bordered="false"
+                        :color="{ color: 'rgba(0,0,0,0)' }"
+                      >
+                        {{ outcome.total_points.toLocaleString() }}
+                        <template #icon>
+                          <n-icon :component="AnalyticsOutline" />
+                        </template>
+                      </n-tag>
+                      <n-tag
+                        :bordered="false"
+                        :color="{ color: 'rgba(0,0,0,0)' }"
+                      >
+                        {{
+                          getReturn(
+                            outcome.total_points,
+                            summary.outcomeSum().total_points
+                          )
+                        }}
+                        <template #icon>
+                          <n-icon :component="TrophyOutline" />
+                        </template>
+                      </n-tag>
+                      <n-tag
+                        :bordered="false"
+                        :color="{ color: 'rgba(0,0,0,0)' }"
+                      >
+                        {{ outcome.total_users.toLocaleString() }}
+                        <template #icon>
+                          <n-icon :component="PeopleOutline" />
+                        </template>
+                      </n-tag>
+                      <n-tag
+                        :bordered="false"
+                        :color="{ color: 'rgba(0,0,0,0)' }"
+                      >
+                        250k
+                        <template #icon>
+                          <n-icon :component="PodiumOutline" />
+                        </template>
+                      </n-tag>
+                    </n-space>
+                  </div>
+                </n-grid-item>
+                <n-grid-item>
+                  <div class="prediction-outcome-results">
+                    <n-space vertical>
+                      <n-tag
+                        v-if="summary.status === 'ACTIVE'"
+                        round
+                        :bordered="false"
+                        :color="{ color: getColor(outcome.color) }"
+                      >
+                        {{ outcome.title }}
+                        <template #icon>
+                          <n-icon :component="PlayCircle" />
+                        </template>
+                      </n-tag>
+                      <n-tag
+                        v-else-if="summary.status === 'LOCKED'"
+                        round
+                        :bordered="false"
+                      >
+                        {{ outcome.title }}
+                        <template #icon>
+                          <n-icon :component="PauseCircle" />
+                        </template>
+                      </n-tag>
+                      <n-tag
+                        v-else-if="outcome.result_type === 'WIN'"
+                        round
+                        :bordered="false"
+                        :color="{ color: getColor(outcome.color) }"
+                      >
+                        {{ outcome.title }}
+                        <template #icon>
+                          <n-icon :component="CheckmarkCircle" />
+                        </template>
+                      </n-tag>
+                      <n-tag
+                        v-else-if="outcome.result_type === 'LOSE'"
+                        round
+                        :bordered="false"
+                      >
+                        {{ outcome.title }}
+                        <template #icon>
+                          <n-icon :component="CloseCircle" />
+                        </template>
+                      </n-tag>
+                      <n-tag v-else round :bordered="false">
+                        {{ outcome.title }}
+                        <template #icon>
+                          <n-icon :component="RemoveCircle" />
+                        </template>
+                      </n-tag>
+                      <span
+                        :style="{
+                          fontSize: '250%',
+                          color: getColor(outcome.color),
+                        }"
+                      >
+                        {{
+                          getPercent(
+                            outcome.total_points,
+                            summary.outcomeSum().total_points
+                          )
+                        }}
+                      </span>
+                      <n-progress
+                        type="line"
+                        :color="getColor(outcome.color)"
+                        :rail-color="
+                          changeColor(getColor(outcome.color), { alpha: 0.2 })
+                        "
+                        :percentage="
+                          100 *
+                          (outcome.total_points /
+                            summary.outcomeSum().total_points)
+                        "
+                        :show-indicator="false"
+                      />
+                    </n-space>
+                  </div>
+                </n-grid-item>
+              </n-grid>
+            </n-grid-item>
+          </n-grid>
+        </n-card>
+      </n-space>
+    </n-layout>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, reactive, toRefs } from "vue";
+import { useThemeVars } from "naive-ui";
+import { changeColor } from "seemly";
+import {
+  CheckmarkCircle,
+  CloseCircle,
+  RemoveCircle,
+  PlayCircle,
+  PauseCircle,
+  AnalyticsOutline,
+  TrophyOutline,
+  PeopleOutline,
+  PodiumOutline,
+} from "@vicons/ionicons5";
 import Summary from "@/models/Summary";
 
 export default defineComponent({
@@ -69,7 +182,20 @@ export default defineComponent({
       summaries: [] as Summary[],
     });
 
-    return { ...toRefs(state) };
+    return {
+      ...toRefs(state),
+      changeColor,
+      CheckmarkCircle,
+      CloseCircle,
+      RemoveCircle,
+      PlayCircle,
+      PauseCircle,
+      AnalyticsOutline,
+      TrophyOutline,
+      PeopleOutline,
+      PodiumOutline,
+      themeVars: useThemeVars(),
+    };
   },
   methods: {
     async getSummary() {
@@ -107,65 +233,10 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.predictionList {
-  padding: 0;
-}
-.predictionList > .prediction {
-  margin-top: 10px;
-  margin-left: auto;
-  margin-right: auto;
-  border-radius: 0.6rem !important;
-  border-width: 1px;
-  border-color: rgba(83, 83, 95, 0.48);
-  border-style: solid;
-  box-shadow: rgba(0, 0, 0, 0.4) 0px 4px 8px 0px;
-  width: 80%;
-  max-width: 1000px;
-  padding: 0;
-  background-color: rgb(24, 24, 27);
-  display: grid;
-  grid-template-columns: 2fr auto;
-  grid-auto-flow: column;
-}
-.predictionOutcome {
-  margin: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  font-size: 0.8rem;
-  line-height: 1;
-  list-style-type: none;
-  padding-left: 10px;
-  padding-right: 10px;
-  border-width: 1px;
-  border-color: rgba(83, 83, 95, 0.48);
-  border-left-style: solid;
-  min-width: 160px;
-}
-.predictionOutcome p {
-  line-height: 0;
-  margin-top: 10px;
-  margin-bottom: 10px;
-}
-.predictionOutcomeDetails {
+.prediction-outcome-stats {
   text-align: left;
-  display: flex;
-  justify-content: center;
-  align-content: center;
-  flex-direction: column;
 }
-.predictionOutcomeSummary {
+.prediction-outcome-results {
   text-align: right;
-  display: flex;
-  justify-content: center;
-  align-content: center;
-  flex-direction: column;
-}
-.predictionTitle {
-  margin: 0;
-  line-height: 0;
-  display: flex;
-  justify-content: center;
-  align-content: center;
-  flex-direction: column;
 }
 </style>
