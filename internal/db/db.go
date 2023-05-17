@@ -65,6 +65,7 @@ func (gdb *GormDB) GetSummary() ([]models.EventSummary, string, error) {
 	var dbResults []struct {
 		ID                      string
 		ChannelName             string
+		CreatedAt               time.Time
 		PredictionWindowSeconds int
 		Title                   string
 		Timestamp               string
@@ -84,6 +85,7 @@ func (gdb *GormDB) GetSummary() ([]models.EventSummary, string, error) {
 		Select(
 			"events.id AS id",
 			"events.channel_name AS channel_name",
+			"events.created_at AS created_at",
 			"events.prediction_window_seconds AS prediction_window_seconds",
 			"events.title AS title",
 			"event_states.timestamp AS timestamp",
@@ -116,7 +118,7 @@ func (gdb *GormDB) GetSummary() ([]models.EventSummary, string, error) {
 	rr := map[string]*models.EventSummary{}
 	for _, r := range dbResults {
 		if _, ok := rr[r.ID]; !ok {
-			ts, err := time.Parse("2006-01-02 15:04:05.999999999Z07:00", r.Timestamp)
+			ts, err := parseTimestamp(r.Timestamp)
 			if err != nil {
 				return nil, "", err
 			}
@@ -124,6 +126,7 @@ func (gdb *GormDB) GetSummary() ([]models.EventSummary, string, error) {
 				ID:                      r.ID,
 				Timestamp:               ts,
 				ChannelName:             r.ChannelName,
+				CreatedAt:               r.CreatedAt,
 				PredictionWindowSeconds: r.PredictionWindowSeconds,
 				Title:                   r.Title,
 				Status:                  r.Status,
@@ -145,4 +148,8 @@ func (gdb *GormDB) GetSummary() ([]models.EventSummary, string, error) {
 	}
 
 	return results, tx.Statement.SQL.String(), nil
+}
+
+func parseTimestamp(ts string) (time.Time, error) {
+	return time.Parse("2006-01-02 15:04:05.999999999Z07:00", ts)
 }

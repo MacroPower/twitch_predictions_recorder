@@ -8,12 +8,27 @@
         <n-card v-for="summary in summaries" :key="summary.timestamp">
           <n-grid cols="4" x-gap="24" y-gap="16">
             <n-grid-item :span="2">
-              <n-space vertical>
-                <h3>{{ summary.title }}</h3>
-                <span
-                  >{{ summary.status }} @
-                  {{ summary.getDate().toLocaleString() }}</span
-                >
+              <n-space vertical size="small">
+                <span>
+                  <h3>{{ summary.title }}</h3>
+                  <a
+                    :href="'https://www.twitch.tv/' + summary.channel_name"
+                    target="_blank"
+                  >
+                    <n-button
+                      secondary
+                      round
+                      type="success"
+                      v-if="summary.status === 'ACTIVE'"
+                    >
+                      Active ({{ summary.getRemainingTime().toFixed(0) }}s)
+                      <template #icon>
+                        <n-icon :component="PlayCircle" />
+                      </template>
+                    </n-button>
+                  </a>
+                </span>
+                <span>{{ summary.getDate().toLocaleString() }}</span>
               </n-space>
             </n-grid-item>
             <n-grid-item
@@ -75,7 +90,6 @@
                         v-if="summary.status === 'ACTIVE'"
                         round
                         :bordered="false"
-                        :color="{ color: getColor(outcome.color) }"
                       >
                         {{ outcome.title }}
                         <template #icon>

@@ -6,6 +6,7 @@ type EventSummary struct {
 	ID                      string           `json:"id"`
 	Timestamp               time.Time        `json:"timestamp"`
 	ChannelName             string           `json:"channel_name"`
+	CreatedAt               time.Time        `json:"created_at"`
 	PredictionWindowSeconds int              `json:"prediction_window_seconds"`
 	Title                   string           `json:"title"`
 	Status                  string           `json:"status"`

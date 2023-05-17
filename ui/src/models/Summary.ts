@@ -14,6 +14,7 @@ interface Summary {
   id: string;
   timestamp: string;
   channel_name: string;
+  created_at: string;
   prediction_window_seconds: number;
   title: string;
   status: string;
@@ -27,7 +28,15 @@ class Summary extends Model {
 
   getDate() {
     // Returns a Date object from the timestamp string
-    return new Date(this.timestamp);
+    return new Date(this.created_at);
+  }
+
+  getRemainingTime() {
+    // Returns the remaining time in seconds
+    const now = new Date();
+    const created = this.getDate();
+    const diff = (now.getTime() - created.getTime()) / 1000;
+    return this.prediction_window_seconds - diff;
   }
 
   getOutcomes(): Outcome[] {
