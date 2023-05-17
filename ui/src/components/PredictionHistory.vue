@@ -7,7 +7,7 @@
 
     <n-layout embedded content-style="padding: 24px;">
       <n-space vertical>
-        <n-card v-for="summary in summaries" :key="summary.timestamp">
+        <n-card v-for="summary in summaries" :key="summary.timestamp" hoverable>
           <PredictionSummary :summary="summary" />
         </n-card>
       </n-space>

@@ -39,49 +39,12 @@
       <n-grid-item>
         <div class="prediction-outcome-results">
           <n-space vertical>
-            <n-tag v-if="summary.status === 'ACTIVE'" round :bordered="false">
-              {{ outcome.title }}
-              <template #icon>
-                <n-icon :component="PlayCircle" />
-              </template>
-            </n-tag>
-            <n-tag
-              v-else-if="summary.status === 'LOCKED'"
-              round
-              :bordered="false"
-            >
-              {{ outcome.title }}
-              <template #icon>
-                <n-icon :component="PauseCircle" />
-              </template>
-            </n-tag>
-            <n-tag
-              v-else-if="outcome.result_type === 'WIN'"
-              round
-              :bordered="false"
-              :color="{ color: getColor(outcome.color) }"
-            >
-              {{ outcome.title }}
-              <template #icon>
-                <n-icon :component="CheckmarkCircle" />
-              </template>
-            </n-tag>
-            <n-tag
-              v-else-if="outcome.result_type === 'LOSE'"
-              round
-              :bordered="false"
-            >
-              {{ outcome.title }}
-              <template #icon>
-                <n-icon :component="CloseCircle" />
-              </template>
-            </n-tag>
-            <n-tag v-else round :bordered="false">
-              {{ outcome.title }}
-              <template #icon>
-                <n-icon :component="RemoveCircle" />
-              </template>
-            </n-tag>
+            <PredictionOutcomeTitle
+              :title="outcome.title"
+              :status="getStatus(summary.status, outcome.result_type)"
+              :color="getColor(outcome.color)"
+              :highlight="outcome.result_type === 'WIN'"
+            />
             <span
               :style="{
                 fontSize: '250%',
@@ -131,6 +94,7 @@ import {
 } from "@vicons/ionicons5";
 import Summary from "@/models/Summary";
 import Outcome from "@/models/Outcome";
+import PredictionOutcomeTitle from "./PredictionOutcomeTitle.vue";
 
 export default defineComponent({
   name: "PredictionOutcome",
@@ -153,6 +117,9 @@ export default defineComponent({
       themeVars: useThemeVars(),
     };
   },
+  components: {
+    PredictionOutcomeTitle,
+  },
   methods: {
     getColor(colorName: string): string {
       if (colorName === "BLUE") {
@@ -168,6 +135,12 @@ export default defineComponent({
     },
     getReturn(value: number, total: number): string {
       return "1:" + (total / value).toFixed(2);
+    },
+    getStatus(summaryStatus: string, outcomeStatus: string) {
+      if (summaryStatus != "RESOLVED") {
+        return summaryStatus;
+      }
+      return outcomeStatus;
     },
   },
 });
