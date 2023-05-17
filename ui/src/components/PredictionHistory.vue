@@ -1,7 +1,9 @@
 <template>
   <div class="summary">
-    <h1>History</h1>
-    <button @click="getSummary">Refresh</button>
+    <div class="title">
+      <h1>History</h1>
+      <button @click="getSummary">Refresh</button>
+    </div>
 
     <n-layout embedded content-style="padding: 24px;">
       <n-space vertical>
@@ -47,4 +49,8 @@ export default defineComponent({
 });
 </script>
 
-<style scoped></style>
+<style scoped>
+.title {
+  text-align: center;
+}
+</style>
