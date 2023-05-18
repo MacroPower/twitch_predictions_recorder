@@ -1,18 +1,16 @@
 <template>
-  <div class="summary">
-    <div class="title">
-      <h1>History</h1>
-      <button @click="getSummary">Refresh</button>
-    </div>
-
-    <n-layout embedded content-style="padding: 24px;">
-      <n-space vertical>
-        <n-card v-for="summary in summaries" :key="summary.timestamp" hoverable>
-          <PredictionSummary :summary="summary" />
-        </n-card>
-      </n-space>
-    </n-layout>
+  <div class="title">
+    <h1>History</h1>
+    <n-button @click="getSummary">Refresh</n-button>
   </div>
+
+  <n-layout embedded content-style="padding: 24px;">
+    <n-space vertical>
+      <n-card v-for="summary in summaries" :key="summary?.timestamp" hoverable>
+        <PredictionSummary :summary="summary" />
+      </n-card>
+    </n-space>
+  </n-layout>
 </template>
 
 <script lang="ts">
@@ -26,7 +24,16 @@ export default defineComponent({
   props: {},
   setup() {
     const state = reactive({
-      summaries: [] as Summary[],
+      summaries: [
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      ] as Summary[] | undefined[],
     });
 
     return {

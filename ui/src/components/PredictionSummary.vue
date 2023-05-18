@@ -1,10 +1,10 @@
 <template>
-  <template v-if="summary">
-    <n-grid cols="2" x-gap="24" y-gap="16">
-      <n-grid-item>
-        <n-space vertical size="small">
-          <span>
-            <h3>{{ summary.title }}</h3>
+  <n-grid cols="2" x-gap="24" y-gap="16">
+    <n-grid-item>
+      <n-space vertical size="small">
+        <span v-if="summary">
+          <h3>{{ summary.title }}</h3>
+          <n-space vertical size="small">
             <a
               :href="'https://www.twitch.tv/' + summary.channel_name"
               target="_blank"
@@ -20,10 +20,10 @@
             <a
               :href="'https://www.twitch.tv/' + summary.channel_name"
               target="_blank"
-              v-if="summary.status === 'LOCKED'"
+              v-else-if="summary.status === 'LOCKED'"
             >
               <n-button secondary round type="info">
-                Locked
+                Locked ({{ (-summary.getRemainingTime()).toFixed(0) }}s)
                 <template #icon>
                   <n-icon :component="PauseCircle" />
                 </template>
@@ -35,25 +35,30 @@
                 <n-icon :component="AddCircle" />
               </template>
             </n-button>
-          </span>
-          <span>{{ summary.getDate().toLocaleString() }}</span>
-        </n-space>
-      </n-grid-item>
-      <n-grid-item>
-        <n-grid cols="2" x-gap="24" y-gap="16">
-          <n-grid-item
-            v-for="outcome in summary.getOutcomes()"
-            :key="outcome.badge_version"
-          >
-            <PredictionOutcome :summary="summary" :outcome="outcome" />
-          </n-grid-item>
-        </n-grid>
-      </n-grid-item>
-    </n-grid>
-  </template>
-  <template v-else>
-    <n-skeleton text :repeat="2" /> <n-skeleton text style="width: 60%" />
-  </template>
+            <n-text>{{ summary.getDate().toLocaleString() }}</n-text>
+          </n-space>
+        </span>
+        <span v-else>
+          <n-space vertical size="small">
+            <n-skeleton text style="width: 100%" />
+            <n-skeleton text style="width: 20%" />
+            <br />
+            <n-skeleton text style="width: 30%" />
+          </n-space>
+        </span>
+      </n-space>
+    </n-grid-item>
+    <n-grid-item>
+      <n-grid cols="2" x-gap="24" y-gap="16">
+        <n-grid-item
+          v-for="outcome in summary?.getOutcomes() || [undefined, undefined]"
+          :key="outcome?.badge_version"
+        >
+          <PredictionOutcome :summary="summary" :outcome="outcome" />
+        </n-grid-item>
+      </n-grid>
+    </n-grid-item>
+  </n-grid>
 </template>
 
 <script lang="ts">

@@ -73,7 +73,12 @@
     </n-grid>
   </template>
   <template v-else>
-    <n-skeleton text :repeat="2" /> <n-skeleton text style="width: 60%" />
+    <n-space vertical size="small">
+      <n-skeleton text />
+      <n-skeleton text />
+      <n-skeleton text />
+      <n-skeleton text />
+    </n-space>
   </template>
 </template>
 
