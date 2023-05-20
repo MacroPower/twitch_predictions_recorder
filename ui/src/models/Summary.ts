@@ -22,12 +22,10 @@ class Summary extends Model {
     return new Date(this.created_at);
   }
 
-  getRemainingTime() {
-    // Returns the remaining time in seconds
-    const now = new Date();
+  getEndDate() {
     const created = this.getDate();
-    const diff = (now.getTime() - created.getTime()) / 1000;
-    return this.prediction_window_seconds - diff;
+    created.setSeconds(created.getSeconds() + this.prediction_window_seconds);
+    return created;
   }
 
   getOutcomes(): Outcome[] {

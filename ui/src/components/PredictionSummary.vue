@@ -11,7 +11,7 @@
               v-if="summary.status === 'ACTIVE'"
             >
               <n-button secondary round type="success">
-                Active ({{ summary.getRemainingTime().toFixed(0) }}s)
+                Active (closes {{ sUseTimeAgo(summary.getEndDate()).value }})
                 <template #icon>
                   <n-icon :component="PlayCircle" />
                 </template>
@@ -23,7 +23,7 @@
               v-else-if="summary.status === 'LOCKED'"
             >
               <n-button secondary round type="info">
-                Locked ({{ (-summary.getRemainingTime()).toFixed(0) }}s)
+                Locked (started {{ sUseTimeAgo(summary.getDate()).value }})
                 <template #icon>
                   <n-icon :component="PauseCircle" />
                 </template>
@@ -68,6 +68,9 @@ import { changeColor } from "seemly";
 import { PlayCircle, AddCircle, PauseCircle } from "@vicons/ionicons5";
 import Summary from "@/models/Summary";
 import PredictionOutcome from "./PredictionOutcome.vue";
+import { useTimeAgo } from "@vueuse/core";
+
+const sUseTimeAgo = (date: Date) => useTimeAgo(date, { showSecond: true });
 
 export default defineComponent({
   name: "PredictionSummary",
@@ -77,6 +80,7 @@ export default defineComponent({
   setup() {
     return {
       changeColor,
+      sUseTimeAgo,
       PlayCircle,
       AddCircle,
       PauseCircle,
