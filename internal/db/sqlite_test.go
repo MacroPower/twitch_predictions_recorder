@@ -19,7 +19,8 @@ func TestSqlite(t *testing.T) {
 	db, err := db.NewSqliteDB(dbPath)
 	require.NoError(t, err)
 
-	db.SetupDefaults()
+	err = db.SetupDefaults()
+	require.NoError(t, err)
 
 	file, err := os.Open("testdata/prediction-1.json")
 	require.NoError(t, err)
@@ -36,6 +37,14 @@ func TestGet(t *testing.T) {
 	db, err := db.NewSqliteDB(dbPath)
 	require.NoError(t, err)
 
-	_, _, err = db.GetSummary()
+	_, _, err = db.GetSummary("")
+	require.NoError(t, err)
+}
+
+func TestGetDetails(t *testing.T) {
+	db, err := db.NewSqliteDB(dbPath)
+	require.NoError(t, err)
+
+	_, _, err = db.GetDetails("08773786-e48a-4df2-8759-db007c3f7a64")
 	require.NoError(t, err)
 }

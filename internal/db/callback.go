@@ -17,6 +17,10 @@ func (cdb *CallbackDB) AddEvents(events ...event.Event) error {
 	return cdb.Callback(events...)
 }
 
-func (cdb *CallbackDB) GetSummary() ([]models.EventSummary, string, error) {
+func (cdb *CallbackDB) GetSummary(_ string) ([]models.EventSummary, string, error) {
+	return nil, "", nil
+}
+
+func (cdb *CallbackDB) GetDetails(_ string) ([]models.EventDetails, string, error) {
 	return nil, "", nil
 }

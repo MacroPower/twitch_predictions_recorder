@@ -31,7 +31,8 @@ func NewSummaryHTTP(db db.DB, logger log.Logger) *SummaryHTTP {
 
 func (s *SummaryHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	summary, _, err := s.db.GetSummary()
+	query := r.URL.Query()
+	summary, _, err := s.db.GetSummary(query.Get("id"))
 	if err != nil {
 		log.Error(s.logger).Log("msg", "Error getting summary", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -40,6 +41,39 @@ func (s *SummaryHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	data, err := json.Marshal(summary)
 	if err != nil {
 		log.Error(s.logger).Log("msg", "Error marshaling summary", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Write(data)
+}
+
+type DetailsHTTP struct {
+	db     db.DB
+	logger log.Logger
+}
+
+func NewDetailsHTTP(db db.DB, logger log.Logger) *DetailsHTTP {
+	return &DetailsHTTP{db: db, logger: logger}
+}
+
+func (h *DetailsHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	query := r.URL.Query()
+	id := query.Get("id")
+	if id == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"error": "id is required"}`))
+		return
+	}
+	details, _, err := h.db.GetDetails(id)
+	if err != nil {
+		log.Error(h.logger).Log("msg", "Error getting details", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	data, err := json.Marshal(details)
+	if err != nil {
+		log.Error(h.logger).Log("msg", "Error marshaling details", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -62,6 +96,7 @@ func Router(db db.DB, logger log.Logger) (*http.ServeMux, error) {
 
 	// api
 	mux.Handle("/api/v1/summary", NewSummaryHTTP(db, logger))
+	mux.Handle("/api/v1/details", NewDetailsHTTP(db, logger))
 
 	return mux, nil
 }

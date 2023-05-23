@@ -11,6 +11,11 @@ type EventMixin struct {
 }
 
 func ConvertMessage(m *eventraw.Message, cm EventMixin) Event {
+	var outcomes []Outcome
+	for _, o := range m.Data.Event.Outcomes {
+		outcomes = append(outcomes, convertOutcome(m.Data.Event.ID, o, m.Data.Timestamp))
+	}
+
 	return Event{
 		ID:                      m.Data.Event.ID,
 		ChannelID:               m.Data.Event.ChannelID,
@@ -24,21 +29,21 @@ func ConvertMessage(m *eventraw.Message, cm EventMixin) Event {
 		PredictionWindowSeconds: m.Data.Event.PredictionWindowSeconds,
 		Title:                   m.Data.Event.Title,
 		EventStates:             []EventState{convertEventState(m)},
+		Outcomes:                outcomes,
 	}
 }
 
 func convertEventState(m *eventraw.Message) EventState {
-	var outcomes []Outcome
+	var outcomeStates []OutcomeState
 	for _, o := range m.Data.Event.Outcomes {
-		outcomes = append(outcomes, convertOutcome(o, m.Data.Timestamp))
+		outcomeStates = append(outcomeStates, convertOutcomeState(o, m.Data.Timestamp))
 	}
 
 	return EventState{
-		Type:             m.Type,
-		Timestamp:        m.Data.Timestamp,
-		Outcomes:         outcomes,
-		Status:           m.Data.Event.Status,
-		WinningOutcomeID: m.Data.Event.WinningOutcomeID,
+		Type:          m.Type,
+		Timestamp:     m.Data.Timestamp,
+		Status:        m.Data.Event.Status,
+		OutcomeStates: outcomeStates,
 	}
 }
 
@@ -49,14 +54,14 @@ func convertUser(u eventraw.User) User {
 	}
 }
 
-func convertOutcome(o eventraw.Outcome, timestamp time.Time) Outcome {
+func convertOutcome(event string, o eventraw.Outcome, timestamp time.Time) Outcome {
 	return Outcome{
-		ID:            o.ID,
-		Color:         o.Color,
-		Title:         o.Title,
-		BadgeVersion:  o.Badge.Version,
-		BadgeSetID:    o.Badge.SetID,
-		OutcomeStates: []OutcomeState{convertOutcomeState(o, timestamp)},
+		ID:           o.ID,
+		EventID:      event,
+		Color:        o.Color,
+		Title:        o.Title,
+		BadgeVersion: o.Badge.Version,
+		BadgeSetID:   o.Badge.SetID,
 	}
 }
 
@@ -69,6 +74,7 @@ func convertOutcomeState(o eventraw.Outcome, timestamp time.Time) OutcomeState {
 	}
 
 	return OutcomeState{
+		OutcomeID:     o.ID,
 		Timestamp:     timestamp,
 		TotalPoints:   o.TotalPoints,
 		TotalUsers:    o.TotalUsers,
@@ -79,20 +85,14 @@ func convertOutcomeState(o eventraw.Outcome, timestamp time.Time) OutcomeState {
 
 func convertPredictor(p eventraw.Predictor) Predictor {
 	return Predictor{
-		ID:        p.ID,
-		EventID:   p.EventID,
-		OutcomeID: p.OutcomeID,
-		ChannelID: p.ChannelID,
+		PredictorID: p.ID,
+		EventID:     p.EventID,
+		OutcomeID:   p.OutcomeID,
+		ChannelID:   p.ChannelID,
 		User: User{
 			UserID:          p.UserID,
 			UserDisplayName: p.UserDisplayName,
 		},
-		PredictorStates: []PredictorState{convertPredictorState(p)},
-	}
-}
-
-func convertPredictorState(p eventraw.Predictor) PredictorState {
-	return PredictorState{
 		Points:               p.Points,
 		PredictedAt:          p.PredictedAt,
 		UpdatedAt:            p.UpdatedAt,
