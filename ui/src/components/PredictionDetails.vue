@@ -1,10 +1,31 @@
 <template>
-  <v-chart class="chart" :option="option" @highlight="highlight" autoresize />
+  <n-grid x-gap="0" :cols="2">
+    <n-grid-item>
+      <h3 class="title">Points</h3>
+      <v-chart
+        class="chart"
+        :option="optionPoints"
+        group="c"
+        @highlight="highlight"
+        autoresize
+      />
+    </n-grid-item>
+    <n-grid-item>
+      <h3 class="title">Users</h3>
+      <v-chart
+        class="chart"
+        :option="optionUsers"
+        group="c"
+        @highlight="highlight"
+        autoresize
+      />
+    </n-grid-item>
+  </n-grid>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, provide } from "vue";
-import { use } from "echarts/core";
+import { use, connect } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { LineChart } from "echarts/charts";
 import {
@@ -37,6 +58,7 @@ import {
 } from "echarts/components";
 import VChart, { THEME_KEY } from "vue-echarts";
 import Details, { DetailsSeries } from "@/models/Details";
+import { getColor } from "@/utils/Color";
 
 use([
   CanvasRenderer,
@@ -71,8 +93,29 @@ use([
 
 provide(THEME_KEY, "dark");
 
-const option = ref({
-  dataset: {} as any,
+const optionPoints = ref({
+  color: [] as string[],
+  legend: {
+    data: [] as string[],
+  },
+  dataset: {} as { source: (number | Date)[][]; dimensions: string[] },
+  tooltip: {
+    trigger: "axis",
+    axisPointer: {
+      animation: false,
+    },
+  },
+  xAxis: { type: "time" },
+  yAxis: {},
+  series: [] as any[],
+});
+
+const optionUsers = ref({
+  color: [] as string[],
+  legend: {
+    data: [] as string[],
+  },
+  dataset: {} as { source: (number | Date)[][]; dimensions: string[] },
   tooltip: {
     trigger: "axis",
     axisPointer: {
@@ -85,7 +128,7 @@ const option = ref({
 });
 
 const highlight = (opts: HighlightEvent) => {
-  console.log(opts.batch.map((item) => item.dataIndex));
+  console.log(opts.batch?.map((item) => item.dataIndex));
 };
 
 interface HighlightEvent {
@@ -108,46 +151,76 @@ export default defineComponent({
   },
   setup() {
     return {
-      option,
+      optionPoints,
+      optionUsers,
       highlight,
     };
   },
+  mounted() {
+    connect("c");
+  },
   updated() {
     const series: DetailsSeries[] = this.details?.getTimeSeries() || [];
-    const source: Array<Array<Date | number>> = [];
-    const dimensions = ["timestamp"];
+    const dimensions: string[] = [];
+    const colors: string[] = [];
+    const sourcePoints: Array<Array<Date | number>> = [];
+    const sourceUsers: Array<Array<Date | number>> = [];
     series.forEach((e) => {
-      dimensions.push(e.details.title + "_points");
-      dimensions.push(e.details.title + "_users");
+      dimensions.push(e.details.title);
+      colors.push(getColor(e.details.color));
       for (let index = 0; index < e.values.length; index++) {
         const element = e.values[index];
-        if (source[index]) {
-          source[index].push(element.points, element.users);
+        if (element.status != "ACTIVE") {
+          continue;
+        }
+        if (sourcePoints[index]) {
+          sourcePoints[index].push(element.points);
+          sourceUsers[index].push(element.users);
         } else {
-          source[index] = [element.timestamp, element.points, element.users];
+          sourcePoints[index] = [element.timestamp, element.points];
+          sourceUsers[index] = [element.timestamp, element.users];
         }
       }
     });
 
-    this.option.dataset = {
-      source: source,
-      dimensions: dimensions,
+    this.optionPoints.dataset = {
+      source: sourcePoints,
+      dimensions: ["timestamp", ...dimensions],
+    };
+    this.optionUsers.dataset = {
+      source: sourceUsers,
+      dimensions: ["timestamp", ...dimensions],
     };
 
-    this.option.series = dimensions.slice(1).map((e) => ({
+    const outcomeDimensions = dimensions.map((e) => ({
       name: e,
       type: "line",
       encode: {
         x: "timestamp",
         y: e,
       },
+      smooth: true,
+      symbol: "none",
     }));
+
+    this.optionPoints.series = outcomeDimensions;
+    this.optionUsers.series = outcomeDimensions;
+
+    this.optionPoints.color = colors;
+    this.optionUsers.color = colors;
+
+    this.optionPoints.legend.data = dimensions;
+    this.optionUsers.legend.data = dimensions;
   },
 });
 </script>
 
 <style scoped>
 .chart {
-  height: 50vh;
+  height: 30vh;
+}
+
+.title {
+  text-align: center;
 }
 </style>

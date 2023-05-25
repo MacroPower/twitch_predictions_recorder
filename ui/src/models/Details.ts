@@ -39,6 +39,7 @@ export interface DetailsSeries {
   details: OutcomeDetails;
   values: Array<{
     timestamp: Date;
+    status: string;
     points: number;
     users: number;
   }>;
@@ -87,6 +88,7 @@ class Details extends Model {
         const ts = new Date(e.timestamp);
         outcomes[o.title].values.push({
           timestamp: ts,
+          status: e.status,
           points: o.total_points,
           users: o.total_users,
         });
