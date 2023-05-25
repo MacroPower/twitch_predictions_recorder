@@ -50,14 +50,12 @@ export default defineComponent({
       this.summaries = summaries.sort((a, b) => {
         return b.getDate().getTime() - a.getDate().getTime();
       });
-      console.log(summaries);
     },
+  },
+  mounted() {
+    this.getSummary();
   },
 });
 </script>
 
-<style scoped>
-.title {
-  text-align: center;
-}
-</style>
+<style scoped></style>

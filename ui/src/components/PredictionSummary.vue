@@ -29,12 +29,14 @@
                 </template>
               </n-button>
             </a>
-            <n-button secondary round v-else>
-              Details
-              <template #icon>
-                <n-icon :component="AddCircle" />
-              </template>
-            </n-button>
+            <router-link v-else :to="'details/' + summary.id">
+              <n-button secondary round>
+                Details
+                <template #icon>
+                  <n-icon :component="AddCircle" />
+                </template>
+              </n-button>
+            </router-link>
             <n-text>{{ summary.getDate().toLocaleString() }}</n-text>
           </n-space>
         </span>
