@@ -56,7 +56,11 @@
           v-for="outcome in summary?.getOutcomes() || [undefined, undefined]"
           :key="outcome?.badge_version"
         >
-          <PredictionOutcome :summary="summary" :outcome="outcome" />
+          <PredictionOutcome
+            :total-points="summary?.outcomeSum().total_points || 0"
+            :outcome="outcome"
+            :status="summary?.status || ''"
+          />
         </n-grid-item>
       </n-grid>
     </n-grid-item>
