@@ -6,21 +6,17 @@
   <n-layout embedded content-style="padding: 24px;">
     <n-space vertical>
       <n-card>
+        <PredictionGraph :timeseries="timeseries" :highlight="highlight" />
+      </n-card>
+      <n-card>
         <PredictionSummary
           :summary="getSummarySample(details, currentSample.index)"
         />
       </n-card>
       <n-card>
-        <PredictionGraph :timeseries="timeseries" :highlight="highlight" />
-      </n-card>
-      <n-card>
-        <span v-if="details">
-          <span v-for="outcome in timeseries" :key="outcome.details.timestamp">
-            <p>
-              {{ getTopUsersSample(details, currentSample.index) }}
-            </p>
-          </span>
-        </span>
+        <PredictionTopUsers
+          :outcomes="getOutcomesSample(details, currentSample.index)"
+        />
       </n-card>
     </n-space>
   </n-layout>
@@ -37,6 +33,7 @@ import {
 } from "vue";
 import PredictionSummary from "@/components/PredictionSummary.vue";
 import PredictionGraph from "@/components/PredictionGraph.vue";
+import PredictionTopUsers from "@/components/PredictionTopUsers.vue";
 import { useRoute } from "vue-router";
 import Summary from "@/models/Summary";
 import Details from "@/models/Details";
@@ -45,6 +42,28 @@ import Outcome from "@/models/Outcome";
 const currentSample = ref({
   index: 0,
 });
+
+const getOutcomesSample = (d: Details, i: number) => {
+  if (!d || d?.event_series.length == 0) {
+    return undefined;
+  }
+  let currentEvent = d.event_series[d.event_series.length - 1];
+  if (i >= 0 && i < d.event_series.length) {
+    currentEvent = d.event_series[i];
+  }
+  const outcomes = currentEvent.outcomes;
+  outcomes.sort((a, b) => {
+    // Sorts so that the outcomes are in order of badge_version alphabetically
+    if (a.badge_version < b.badge_version) {
+      return -1;
+    }
+    if (a.badge_version > b.badge_version) {
+      return 1;
+    }
+    return 0;
+  });
+  return outcomes;
+};
 
 const getTopUsersSample = (d: Details, i: number) => {
   if (!d || d?.event_series.length == 0) {
@@ -98,6 +117,7 @@ export default defineComponent({
   components: {
     PredictionSummary,
     PredictionGraph,
+    PredictionTopUsers,
   },
   setup() {
     const route = useRoute();
@@ -149,6 +169,7 @@ export default defineComponent({
       highlight,
       getTopUsersSample,
       getSummarySample,
+      getOutcomesSample,
       getSummary,
       getDetails,
       timeseries,

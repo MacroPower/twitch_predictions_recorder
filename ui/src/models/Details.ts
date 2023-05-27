@@ -1,5 +1,5 @@
 import Model from "./Model";
-import User from "./User";
+import Outcome from "./Outcome";
 
 interface Details {
   id: string;
@@ -14,29 +14,11 @@ interface EventSeries {
   id: string;
   timestamp: string;
   status: string;
-  outcomes: OutcomeDetails[];
-}
-
-interface OutcomeDetails {
-  id: string;
-  color: string;
-  title: string;
-  badge_version: string;
-  badge_set_id: string;
-  timestamp: string;
-  total_points: number;
-  total_users: number;
-  result_type: string;
-  top_predictors: Predictor[];
-}
-
-interface Predictor {
-  user: User;
-  points: number;
+  outcomes: Outcome[];
 }
 
 export interface DetailsSeries {
-  details: OutcomeDetails;
+  details: Outcome;
   values: Array<{
     timestamp: Date;
     status: string;

@@ -1,5 +1,5 @@
 import Model from "./Model";
-import Outcome from "./Outcome";
+import Outcome, { getOutcomeSum } from "./Outcome";
 
 interface Summary {
   id: string;
@@ -43,17 +43,7 @@ class Summary extends Model {
   }
 
   outcomeSum() {
-    // Returns an Outcome object with the sum of all outcomes
-    const sum = {
-      title: "Total",
-      total_points: 0,
-      total_users: 0,
-    };
-    this.outcomes.forEach((outcome) => {
-      sum.total_points += outcome.total_points;
-      sum.total_users += outcome.total_users;
-    });
-    return sum;
+    return getOutcomeSum(this.outcomes);
   }
 }
 
