@@ -13,7 +13,7 @@ type EventMixin struct {
 func ConvertMessage(m *eventraw.Message, cm EventMixin) Event {
 	var outcomes []Outcome
 	for _, o := range m.Data.Event.Outcomes {
-		outcomes = append(outcomes, convertOutcome(m.Data.Event.ID, o, m.Data.Timestamp))
+		outcomes = append(outcomes, convertOutcome(m.Data.Event.ID, o))
 	}
 
 	return Event{
@@ -54,7 +54,7 @@ func convertUser(u eventraw.User) User {
 	}
 }
 
-func convertOutcome(event string, o eventraw.Outcome, timestamp time.Time) Outcome {
+func convertOutcome(event string, o eventraw.Outcome) Outcome {
 	return Outcome{
 		ID:           o.ID,
 		EventID:      event,

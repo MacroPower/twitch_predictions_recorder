@@ -8,6 +8,7 @@ import (
 	"github.com/MacroPower/twitch_predictions_recorder/internal/db"
 	"github.com/MacroPower/twitch_predictions_recorder/internal/event"
 	"github.com/MacroPower/twitch_predictions_recorder/internal/twitchtest"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,13 +27,16 @@ func TestSqlite(t *testing.T) {
 	require.NoError(t, err)
 
 	lt := twitchtest.NewTestListener(bufio.NewReader(file))
-	lt.Listen(func(e event.Event) error {
-		db.AddEvents(e)
+	err = lt.Listen(func(e event.Event) error {
+		err = db.AddEvents(e)
+		require.NoError(t, err)
 
 		return nil
 	})
+	require.NoError(t, err)
 }
 
+//nolint:paralleltest
 func TestGet(t *testing.T) {
 	db, err := db.NewSqliteDB(dbPath)
 	require.NoError(t, err)
@@ -41,6 +45,7 @@ func TestGet(t *testing.T) {
 	require.NoError(t, err)
 }
 
+//nolint:paralleltest
 func TestGetDetails(t *testing.T) {
 	db, err := db.NewSqliteDB(dbPath)
 	require.NoError(t, err)

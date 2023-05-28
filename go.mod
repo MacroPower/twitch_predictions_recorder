@@ -1,16 +1,16 @@
 module github.com/MacroPower/twitch_predictions_recorder
 
-go 1.19
+go 1.20
 
 require (
 	github.com/Adeithe/go-twitch v0.1.4-0.20230104225120-eee71bbf962d
 	github.com/alecthomas/kong v0.7.1
 	github.com/go-kit/log v0.2.1
 	github.com/prometheus/client_golang v1.15.1
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.3
 	golang.org/x/oauth2 v0.8.0
-	gorm.io/driver/postgres v1.5.0
-	gorm.io/driver/sqlite v1.5.0
+	gorm.io/driver/postgres v1.5.2
+	gorm.io/driver/sqlite v1.5.1
 	gorm.io/gorm v1.25.1
 )
 
@@ -23,15 +23,16 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
-	github.com/jackc/pgx/v5 v5.3.0 // indirect
+	github.com/jackc/pgx/v5 v5.3.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
-	github.com/mattn/go-sqlite3 v1.14.15 // indirect
+	github.com/kr/text v0.2.0 // indirect
+	github.com/mattn/go-sqlite3 v1.14.16 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
-	github.com/prometheus/common v0.43.0 // indirect
-	github.com/prometheus/procfs v0.9.0 // indirect
+	github.com/prometheus/common v0.44.0 // indirect
+	github.com/prometheus/procfs v0.10.0 // indirect
 	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29 // indirect
 	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/net v0.10.0 // indirect

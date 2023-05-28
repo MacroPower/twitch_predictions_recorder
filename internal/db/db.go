@@ -7,6 +7,7 @@ import (
 
 	"github.com/MacroPower/twitch_predictions_recorder/internal/api/models"
 	"github.com/MacroPower/twitch_predictions_recorder/internal/event"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -41,6 +42,7 @@ func (gdb *GormDB) SetupDefaults() error {
 	if err := gdb.setup(&event.User{}); err != nil {
 		return fmt.Errorf("error migrating 'user': %w", err)
 	}
+
 	return nil
 }
 
@@ -54,8 +56,9 @@ func (gdb *GormDB) AddEvents(events ...event.Event) error {
 
 func (gdb *GormDB) setup(obj interface{}) error {
 	if err := gdb.db.AutoMigrate(obj); err != nil {
-		return err
+		return fmt.Errorf("auto migration error: %w", err)
 	}
+
 	return nil
 }
 
@@ -78,7 +81,7 @@ func (gdb *GormDB) GetSummary(eventID string) ([]models.EventSummary, string, er
 		OutcomeResultType       string
 	}
 
-	session := gdb.db //.Session(&gorm.Session{DryRun: true})
+	session := gdb.db // .Session(&gorm.Session{DryRun: true})
 
 	query := session.
 		Select(
@@ -191,7 +194,7 @@ type getDetailsDBRow struct {
 func (gdb *GormDB) GetDetails(eventID string) ([]models.EventDetails, string, error) {
 	var dbResults []getDetailsDBRow
 
-	session := gdb.db //.Session(&gorm.Session{DryRun: true})
+	session := gdb.db // .Session(&gorm.Session{DryRun: true})
 
 	query := session.
 		Select(
@@ -230,16 +233,21 @@ func (gdb *GormDB) GetDetails(eventID string) ([]models.EventDetails, string, er
 		return nil, sql, tx.Error
 	}
 
-	results := transformGetDetailsDbResults(dbResults)
+	results := transformGetDetailsDBResults(dbResults)
 
 	return results, sql, nil
 }
 
 func parseTimestamp(ts string) (time.Time, error) {
-	return time.Parse("2006-01-02 15:04:05.999999999Z07:00", ts)
+	t, err := time.Parse("2006-01-02 15:04:05.999999999Z07:00", ts)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to parse timestamp: %w", err)
+	}
+
+	return t, nil
 }
 
-func transformGetDetailsDbResults(dbResults []getDetailsDBRow) []models.EventDetails {
+func transformGetDetailsDBResults(dbResults []getDetailsDBRow) []models.EventDetails {
 	eventDetailsMap := map[string]*models.EventDetails{}
 	eventSeriesMap := map[string]*models.EventSeries{}
 	outcomeDetailsMap := map[string]*models.OutcomeDetails{}

@@ -144,23 +144,30 @@ func main() {
 				jsonData, err := json.Marshal(events)
 				if err != nil {
 					log.Error(logger).Log("msg", "Could not marshal sample data", "err", err)
-					return err
+
+					return fmt.Errorf("failed to marshal sample data: %w", err)
 				}
 
 				log.Debug(logger).Log("msg", "Got events", "data", string(jsonData))
+
 				return nil
 			},
 		}
 	}
 
-	gdb.SetupDefaults()
+	if err = gdb.SetupDefaults(); err != nil {
+		panic(err)
+	}
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 
 	listener := twitch.NewEventListener(twitchAPI, logger, streamers...)
 	err = listener.Listen(func(d event.Event) error {
-		gdb.AddEvents(d)
+		if err := gdb.AddEvents(d); err != nil {
+			return fmt.Errorf("failed to add event: %w", err)
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -208,10 +215,10 @@ func main() {
 	listener.Close()
 }
 
-func getStreamersFromFile(file string, logger log.Logger) ([]string, error) {
+func getStreamersFromFile(file string, _ log.Logger) ([]string, error) {
 	fileBytes, err := os.ReadFile(file)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading streamers file: %w", err)
 	}
 
 	splitFunc := func(c rune) bool {

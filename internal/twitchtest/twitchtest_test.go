@@ -6,6 +6,7 @@ import (
 
 	"github.com/MacroPower/twitch_predictions_recorder/internal/event"
 	"github.com/MacroPower/twitch_predictions_recorder/internal/twitchtest"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,7 +21,7 @@ func TestReplay(t *testing.T) {
 
 	i := 0
 	lt := twitchtest.NewTestListener(&b)
-	lt.Listen(func(e event.Event) error {
+	err := lt.Listen(func(e event.Event) error {
 		require.Equal(t, "event-updated", e.EventStates[0].Type)
 		switch i {
 		case 0:
@@ -33,4 +34,5 @@ func TestReplay(t *testing.T) {
 
 		return nil
 	})
+	require.NoError(t, err)
 }

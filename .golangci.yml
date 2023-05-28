@@ -31,17 +31,25 @@ output:
 linters:
   enable:
     # Sorted alphabetically.
+    - asasalint
     - asciicheck
+    - bidichk
     - bodyclose
+    - containedctx
+    - contextcheck
     # - cyclop # Disabled length/complexity linters.
     # - deadcode # Replaced by unused.
+    - decorder
     # - depguard # Enable with settings for required guards.
     - dogsled
     - dupl
+    - dupword
     - durationcheck
     - errcheck
+    - errchkjson
     - errname
     - errorlint
+    - execinquery
     - exhaustive
     # - exhaustivestruct # Enable for certain files if needed.
     - exportloopref
@@ -49,6 +57,8 @@ linters:
     - forcetypeassert
     # - funlen # Disabled length/complexity linters.
     # - gci # Using goimports instead.
+    # - ginkgolinter # Enable if using Ginkgo.
+    - gocheckcompilerdirectives
     # - gochecknoglobals # Useful in some cases.
     # - gochecknoinits # Useful in some cases.
     # - gocognit # Disabled length/complexity linters.
@@ -69,37 +79,51 @@ linters:
     - gosec
     - gosimple
     - govet
+    - grouper
     # - ifshort # Deprecated.
     - importas
     - ineffassign
+    - interfacebloat
+    - ireturn # Required for kitlog wrapper.
     - lll
+    - loggercheck
+    - maintidx
     - makezero
     - misspell
+    - musttag
     - nakedret
     - nestif
     - nilerr
+    - nilnil
     - nlreturn
     - noctx
     - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
     - paralleltest
-    - prealloc
+    # - prealloc # Unnessesary.
     - predeclared
     - promlinter
+    - reassign
     - revive
     # - rowserrcheck # Disabled because of generics.
-    # - sqlclosecheck # Disabled because of generics.
+    - sqlclosecheck # Disabled because of generics.
     - staticcheck
     # - structcheck # Replaced by unused.
     - stylecheck
     # - tagliatelle # Enable if standards are known.
-    - testpackage
+    - tenv
+    - testableexamples
+    # - testpackage
     - thelper
     - tparallel
     - typecheck
     - unconvert
     - unparam
     - unused
+    - usestdlibvars
     # - varcheck # Replaced by unused.
+    # - varnamelen # Disabled length/complexity linters.
     # - wastedassign # Disabled because of generics.
     - whitespace
     - wrapcheck
@@ -121,6 +145,19 @@ issues:
       linters:
         - dupl
         - promlinter
-    - linters:
+
+    - source: ^(\s+)log\..+\.Log\(
+      linters:
         - errcheck
-      source: log\..+\.Log\(
+
+    - source: '[ ](log\.)?Logger[ ]'
+      linters:
+        - ireturn
+
+    - source: '.+\.WriteString\(`\{.+'
+      linters:
+        - lll
+
+    - source: 'type Event.*'
+      linters:
+        - revive

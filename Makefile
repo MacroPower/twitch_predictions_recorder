@@ -11,6 +11,7 @@ all: go-format go-lint go-test go-bench go-build
 
 .PHONY: install
 install: $(BINGO)
+	$(BINGO) get
 
 .PHONY: format
 format: ## Runs all format targets.
@@ -69,6 +70,7 @@ go-bench: $(BENCHSTAT)
 
 .PHONY: go-build
 go-build: ## Builds Go executables.
+go-build: HOSTNAME:=$(shell hostname)
 go-build: $(GORELEASER)
 	@echo ">> building Go executables"
-	$(GORELEASER) build --snapshot --rm-dist
+	HOSTNAME=$(HOSTNAME) $(GORELEASER) build --snapshot --clean

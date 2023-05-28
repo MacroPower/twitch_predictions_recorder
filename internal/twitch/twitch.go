@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/MacroPower/twitch_predictions_recorder/internal/event"
+	"github.com/MacroPower/twitch_predictions_recorder/internal/eventraw"
+	"github.com/MacroPower/twitch_predictions_recorder/internal/log"
+
 	"github.com/Adeithe/go-twitch"
 	"github.com/Adeithe/go-twitch/api"
 	"github.com/Adeithe/go-twitch/api/helix"
 	"github.com/Adeithe/go-twitch/pubsub"
-	"github.com/MacroPower/twitch_predictions_recorder/internal/event"
-	"github.com/MacroPower/twitch_predictions_recorder/internal/eventraw"
-	"github.com/MacroPower/twitch_predictions_recorder/internal/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -125,7 +126,7 @@ func NewEventListener(client *api.Client, logger log.Logger, streamers ...string
 }
 
 func (te *EventListener) Listen(dataFunc func(event.Event) error) error {
-	streamerIdName := te.GetIDMap(te.streamers...)
+	streamerIDName := te.GetIDMap(te.streamers...)
 
 	te.twitchClient.OnShardMessage(func(shard int, topic string, data []byte) {
 		msg := &eventraw.Message{}
@@ -135,7 +136,7 @@ func (te *EventListener) Listen(dataFunc func(event.Event) error) error {
 			return
 		}
 
-		streamer := streamerIdName[msg.Data.Event.ChannelID]
+		streamer := streamerIDName[msg.Data.Event.ChannelID]
 
 		messagesProcessed.WithLabelValues(streamer, fmt.Sprint(shard), msg.Data.Event.Status).Inc()
 		log.Debug(te.logger).Log(
@@ -151,18 +152,22 @@ func (te *EventListener) Listen(dataFunc func(event.Event) error) error {
 		}
 	})
 
-	for id := range streamerIdName {
+	for id := range streamerIDName {
 		if err := te.twitchClient.Listen(topic, id); err != nil {
-			return err
+			return fmt.Errorf("failed to listen on topic: %w", err)
 		}
 	}
 
-	log.Info(te.logger).Log("msg", "Started listening", "topics", te.twitchClient.GetNumTopics(), "shards", te.twitchClient.GetNumShards())
+	log.Info(te.logger).Log(
+		"msg", "Started listening",
+		"topics", te.twitchClient.GetNumTopics(),
+		"shards", te.twitchClient.GetNumShards(),
+	)
 
 	return nil
 }
 
-func (e *EventListener) GetIDMap(streamers ...string) map[string]string {
+func (te *EventListener) GetIDMap(streamers ...string) map[string]string {
 	streamersSeg := make([][]string, (len(streamers)/streamerSegSize)+1)
 	for i := 0; i < len(streamers); i++ {
 		streamersSeg[i/streamerSegSize] = append(streamersSeg[i/streamerSegSize], streamers[i])
@@ -172,16 +177,16 @@ func (e *EventListener) GetIDMap(streamers ...string) map[string]string {
 
 	for i, seg := range streamersSeg {
 		start, end := getSize(i, streamerSegSize, len(streamers))
-		log.Info(e.logger).Log("msg", fmt.Sprintf("Getting IDs for streamer batch %d (%d - %d)", i+1, start, end))
+		log.Info(te.logger).Log("msg", fmt.Sprintf("Getting IDs for streamer batch %d (%d - %d)", i+1, start, end))
 
-		ud, err := e.apiClient.Helix().GetUsers(helix.UserOpts{Logins: seg})
+		ud, err := te.apiClient.Helix().GetUsers(helix.UserOpts{Logins: seg})
 		if err != nil {
 			panic(err)
 		}
 
 		for _, d := range ud.Data {
 			ids[d.ID] = d.DisplayName
-			log.Debug(e.logger).Log("msg", "Got ID for streamer", "name", d.DisplayName, "id", d.ID)
+			log.Debug(te.logger).Log("msg", "Got ID for streamer", "name", d.DisplayName, "id", d.ID)
 		}
 	}
 

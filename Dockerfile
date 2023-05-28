@@ -1,4 +1,4 @@
-FROM golang:1.17
+FROM golang:1.20
 
 COPY twitch_predictions_recorder /usr/local/bin/
 

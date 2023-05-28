@@ -5,10 +5,13 @@ import (
 	"time"
 
 	"github.com/MacroPower/twitch_predictions_recorder/internal/api/models"
+
 	"github.com/stretchr/testify/require"
 )
 
 func TestTransform(t *testing.T) {
+	t.Parallel()
+
 	now := time.Now()
 
 	dbResults := []getDetailsDBRow{
@@ -146,7 +149,7 @@ func TestTransform(t *testing.T) {
 		},
 	}
 
-	actual := transformGetDetailsDbResults(dbResults)
+	actual := transformGetDetailsDBResults(dbResults)
 
 	require.Equal(t, expected, actual)
 }

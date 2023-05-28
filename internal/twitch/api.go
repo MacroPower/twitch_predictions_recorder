@@ -2,6 +2,7 @@ package twitch
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Adeithe/go-twitch"
 	"github.com/Adeithe/go-twitch/api"
@@ -20,7 +21,7 @@ func NewAPIClient(clientID, clientSecret string) (*api.Client, error) {
 
 	token, err := oauth2Config.Token(context.Background())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to retrieve oauth2 token: %w", err)
 	}
 
 	return api.NewBearer(token.AccessToken), nil

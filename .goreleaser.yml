@@ -17,6 +17,13 @@ builds:
       - linux
       - windows
       - darwin
+    ldflags:
+      - -s
+      - -w
+      - -X github.com/MacroPower/go_template/internal/version.Version={{.Version}}
+      - -X github.com/MacroPower/go_template/internal/version.Branch={{.Branch}}
+      - -X github.com/MacroPower/go_template/internal/version.BuildUser={{.Env.USER}}@{{.Env.HOSTNAME}}
+      - -X github.com/MacroPower/go_template/internal/version.BuildDate={{.Date}}
 
 archives:
   - replacements:
