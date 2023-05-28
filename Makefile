@@ -52,9 +52,15 @@ go-test:
 	@echo ">> running Go tests"
 	@$(GO) test -race $(FILES_TO_TEST);
 
+.PHONY: distlib
+distlib: ## Build distlib Sqlite extension.
+distlib:
+	@cd internal/db/lib/distlib && \
+		./linux_build_extensions.sh
+
 .PHONY: go-test-action
 go-test-action:
-go-test-action: $(GOTEST2ACTION)
+go-test-action: distlib $(GOTEST2ACTION)
 	$(GO) test -race -covermode=atomic -json $(FILES_TO_TEST) | $(GOTEST2ACTION) \
 		--passthrough \
 		--root-pkg github.com/MacroPower/go_template
