@@ -14,13 +14,20 @@ import (
 
 const dbPath = "test.sqlite"
 
+var testDB *db.GormDB
+
+func init() {
+	var err error
+	testDB, err = db.NewSqliteDB(dbPath)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func TestSqlite(t *testing.T) {
 	t.Parallel()
 
-	db, err := db.NewSqliteDB(dbPath)
-	require.NoError(t, err)
-
-	err = db.SetupDefaults()
+	err := testDB.SetupDefaults()
 	require.NoError(t, err)
 
 	file, err := os.Open("testdata/prediction-1.json")
@@ -28,7 +35,7 @@ func TestSqlite(t *testing.T) {
 
 	lt := twitchtest.NewTestListener(bufio.NewReader(file))
 	err = lt.Listen(func(e event.Event) error {
-		err = db.AddEvents(e)
+		err = testDB.AddEvents(e)
 		require.NoError(t, err)
 
 		return nil
@@ -38,18 +45,20 @@ func TestSqlite(t *testing.T) {
 
 //nolint:paralleltest
 func TestGet(t *testing.T) {
-	db, err := db.NewSqliteDB(dbPath)
-	require.NoError(t, err)
-
-	_, _, err = db.GetSummary("")
+	_, _, err := testDB.GetSummary("")
 	require.NoError(t, err)
 }
 
 //nolint:paralleltest
 func TestGetDetails(t *testing.T) {
-	db, err := db.NewSqliteDB(dbPath)
+	_, _, err := testDB.GetDetails("08773786-e48a-4df2-8759-db007c3f7a64")
+	require.NoError(t, err)
+}
+
+//nolint:paralleltest
+func TestGetSimilar(t *testing.T) {
+	got, _, err := testDB.GetRelatedSummaries("Will moon Survive the Third Region?", 3)
 	require.NoError(t, err)
 
-	_, _, err = db.GetDetails("08773786-e48a-4df2-8759-db007c3f7a64")
-	require.NoError(t, err)
+	require.Len(t, got, 2)
 }

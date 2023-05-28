@@ -18,6 +18,17 @@
           :outcomes="getOutcomesSample(details, currentSample.index)"
         />
       </n-card>
+      <n-card>
+        <n-space vertical>
+          <h2>Similar Predictions</h2>
+          <n-card
+            v-for="similarSummary in similar"
+            :key="similarSummary?.timestamp"
+          >
+            <PredictionSummary :summary="similarSummary" />
+          </n-card>
+        </n-space>
+      </n-card>
     </n-space>
   </n-layout>
 </template>
@@ -124,6 +135,7 @@ export default defineComponent({
     const state = reactive({
       summary: undefined as Summary | undefined,
       details: undefined as Details | undefined,
+      similar: [undefined] as Summary[] | undefined[],
     });
 
     const eventIDRef = computed(() => {
@@ -144,7 +156,13 @@ export default defineComponent({
       const summaries = (await Summary.params({
         id: eventIDRef.value || "",
       }).get()) as Summary[];
-      state.summary = summaries[0];
+      const summary = summaries[0];
+      state.summary = summary;
+
+      const similar = (await Summary.params({
+        title: summary.title || "",
+      }).get()) as Summary[];
+      state.similar = similar.filter((e) => e.id !== summary.id);
     }
     async function getDetails() {
       const details = (await Details.params({

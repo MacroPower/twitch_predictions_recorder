@@ -24,3 +24,7 @@ func (cdb *CallbackDB) GetSummary(_ string) ([]models.EventSummary, string, erro
 func (cdb *CallbackDB) GetDetails(_ string) ([]models.EventDetails, string, error) {
 	return nil, "", nil
 }
+
+func (cdb *CallbackDB) GetRelatedSummaries(_ string, _ int) ([]models.EventSummary, string, error) {
+	return nil, "", nil
+}

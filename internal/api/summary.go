@@ -9,6 +9,8 @@ import (
 	"github.com/MacroPower/twitch_predictions_recorder/internal/log"
 )
 
+const editDistance = 3
+
 type SummaryHTTP struct {
 	db     db.DB
 	logger log.Logger
@@ -23,8 +25,15 @@ func (s *SummaryHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	query := r.URL.Query()
 	queryID := query.Get("id")
+	queryTitle := query.Get("title")
 
-	summary, _, err := s.db.GetSummary(queryID)
+	var summary []models.EventSummary
+	var err error
+	if queryTitle != "" {
+		summary, _, err = s.db.GetRelatedSummaries(queryTitle, editDistance)
+	} else {
+		summary, _, err = s.db.GetSummary(queryID)
+	}
 	if err != nil {
 		log.Error(s.logger).Log("msg", "Error getting data", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)

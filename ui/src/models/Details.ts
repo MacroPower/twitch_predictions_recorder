@@ -32,15 +32,6 @@ class Details extends Model {
     return "api/v1/details";
   }
 
-  parameterNames() {
-    const defaultParams = super.parameterNames();
-    const customParams = {
-      include: "id",
-    };
-
-    return { ...defaultParams, ...customParams };
-  }
-
   sort() {
     this.event_series.sort((a, b) => {
       if (a.timestamp < b.timestamp) {
