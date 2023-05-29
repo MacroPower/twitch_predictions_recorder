@@ -1,5 +1,5 @@
 <template>
-  <div class="about">
-    <h1>This is an about page</h1>
-  </div>
+  <n-layout embedded content-style="padding: 24px;">
+    <n-h1>This is an about page</n-h1>
+  </n-layout>
 </template>

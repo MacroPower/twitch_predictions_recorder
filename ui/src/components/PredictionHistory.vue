@@ -1,16 +1,13 @@
 <template>
-  <div class="title">
-    <h1>History</h1>
+  <n-h1
+    >History
     <n-button @click="getSummary">Refresh</n-button>
-  </div>
-
-  <n-layout embedded content-style="padding: 24px;">
-    <n-space vertical>
-      <n-card v-for="summary in summaries" :key="summary?.timestamp" hoverable>
-        <PredictionSummary :summary="summary" />
-      </n-card>
-    </n-space>
-  </n-layout>
+  </n-h1>
+  <n-space vertical>
+    <n-card v-for="summary in summaries" :key="summary?.timestamp" hoverable>
+      <PredictionSummary :summary="summary" />
+    </n-card>
+  </n-space>
 </template>
 
 <script lang="ts">

@@ -1,7 +1,7 @@
 <template>
   <n-grid x-gap="0" :cols="2">
     <n-grid-item>
-      <h3 class="title">Points</h3>
+      <n-h3 class="title">Points</n-h3>
       <v-chart
         class="chart"
         :option="getOptions(timeseriesRef, 'points')"
@@ -11,7 +11,7 @@
       />
     </n-grid-item>
     <n-grid-item>
-      <h3 class="title">Users</h3>
+      <n-h3 class="title">Users</n-h3>
       <v-chart
         class="chart"
         :option="getOptions(timeseriesRef, 'users')"

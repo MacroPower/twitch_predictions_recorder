@@ -1,7 +1,7 @@
 <template>
-  <div class="home">
+  <n-layout embedded content-style="padding: 24px;">
     <PredictionHistory />
-  </div>
+  </n-layout>
 </template>
 
 <script lang="ts">

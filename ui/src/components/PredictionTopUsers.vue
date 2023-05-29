@@ -1,9 +1,9 @@
 <template>
-  <n-grid x-gap="0" :cols="2">
+  <n-grid x-gap="0" y-gap="12" cols="2 1200:4">
     <n-grid-item v-for="outcome in outcomes" :key="outcome.id">
-      <h3>{{ outcome.title }}</h3>
-      <ol>
-        <li
+      <n-h3>{{ outcome.title }}</n-h3>
+      <n-ol>
+        <n-li
           v-for="predictor in outcome.top_predictors"
           :key="predictor.user.user_id"
         >
@@ -14,8 +14,8 @@
               predictor.points * (getTotalPoints() / outcome.total_points)
             ).toLocaleString()
           }}
-        </li>
-      </ol>
+        </n-li>
+      </n-ol>
     </n-grid-item>
   </n-grid>
 </template>

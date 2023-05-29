@@ -73,10 +73,6 @@ export default defineComponent({
   -moz-osx-font-smoothing: grayscale;
 }
 
-.title {
-  text-align: center;
-}
-
 .nav {
   padding: 4px;
 }

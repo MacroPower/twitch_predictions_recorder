@@ -2,10 +2,10 @@
   <n-grid cols="2" x-gap="24" y-gap="16">
     <n-grid-item>
       <n-space vertical size="small">
-        <span v-if="summary">
-          <h3>{{ summary.title }}</h3>
+        <n-el v-if="summary">
+          <n-h3>{{ summary.title }}</n-h3>
           <n-space vertical size="small">
-            <a
+            <n-a
               :href="'https://www.twitch.tv/' + summary.channel_name"
               target="_blank"
               v-if="summary.status === 'ACTIVE'"
@@ -16,8 +16,8 @@
                   <n-icon :component="PlayCircle" />
                 </template>
               </n-button>
-            </a>
-            <a
+            </n-a>
+            <n-a
               :href="'https://www.twitch.tv/' + summary.channel_name"
               target="_blank"
               v-else-if="summary.status === 'LOCKED'"
@@ -28,8 +28,8 @@
                   <n-icon :component="PauseCircle" />
                 </template>
               </n-button>
-            </a>
-            <router-link v-else :to="'details/' + summary.id">
+            </n-a>
+            <router-link v-else :to="'/details/' + summary.id">
               <n-button secondary round>
                 Details
                 <template #icon>
@@ -39,15 +39,15 @@
             </router-link>
             <n-text>{{ summary.getDate().toLocaleString() }}</n-text>
           </n-space>
-        </span>
-        <span v-else>
+        </n-el>
+        <n-el v-else>
           <n-space vertical size="small">
             <n-skeleton text style="width: 100%" />
             <n-skeleton text style="width: 20%" />
             <br />
             <n-skeleton text style="width: 30%" />
           </n-space>
-        </span>
+        </n-el>
       </n-space>
     </n-grid-item>
     <n-grid-item>
