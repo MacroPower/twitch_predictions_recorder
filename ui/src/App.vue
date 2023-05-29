@@ -8,9 +8,10 @@
               <AppHeader />
             </n-grid-item>
             <n-grid-item>
-              <n-space justify="end">
-                <n-button @click="theme = darkTheme"> Dark </n-button>
-                <n-button @click="theme = null"> Light </n-button>
+              <n-space justify="end" align="center" class="right-nav">
+                <n-button text @click="toggleTheme">
+                  <template #icon><n-icon :component="themeIcon" /></template
+                ></n-button>
               </n-space>
             </n-grid-item>
           </n-grid>
@@ -30,15 +31,32 @@ import { defineComponent, ref } from "vue";
 import { useOsTheme, darkTheme } from "naive-ui";
 import type { GlobalTheme } from "naive-ui";
 import AppHeader from "@/components/AppHeader.vue";
+import { LightModeFilled, DarkModeFilled } from "@vicons/material";
 
 export default defineComponent({
   setup() {
     const osThemeRef = useOsTheme();
+
+    const theme = ref<GlobalTheme | null>(
+      osThemeRef.value === "dark" ? darkTheme : null
+    );
+
+    const themeIcon = ref(LightModeFilled);
+
+    function toggleTheme() {
+      if (theme.value?.name === "dark") {
+        theme.value = null;
+        themeIcon.value = DarkModeFilled;
+      } else {
+        theme.value = darkTheme;
+        themeIcon.value = LightModeFilled;
+      }
+    }
+
     return {
-      darkTheme,
-      theme: ref<GlobalTheme | null>(
-        osThemeRef.value === "dark" ? darkTheme : null
-      ),
+      toggleTheme,
+      themeIcon,
+      theme,
     };
   },
   components: {
@@ -57,5 +75,14 @@ export default defineComponent({
 
 .title {
   text-align: center;
+}
+
+.nav {
+  padding: 4px;
+}
+
+.right-nav {
+  height: 100%;
+  margin-right: 18px;
 }
 </style>
