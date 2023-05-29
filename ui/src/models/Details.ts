@@ -1,5 +1,6 @@
 import Model from "./Model";
 import Outcome from "./Outcome";
+import { sort } from "@/utils/Timestamp";
 
 interface Details {
   id: string;
@@ -33,15 +34,7 @@ class Details extends Model {
   }
 
   sort() {
-    this.event_series.sort((a, b) => {
-      if (a.timestamp < b.timestamp) {
-        return -1;
-      }
-      if (a.timestamp > b.timestamp) {
-        return 1;
-      }
-      return 0;
-    });
+    this.event_series.sort(sort);
   }
 
   getTimeSeries(): DetailsSeries[] {

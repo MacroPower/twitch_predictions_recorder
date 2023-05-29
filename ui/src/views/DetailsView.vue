@@ -1,35 +1,38 @@
 <template>
-  <div class="title">
-    <h1>Details</h1>
-  </div>
-
   <n-layout embedded content-style="padding: 24px;">
-    <n-space vertical>
-      <n-card>
-        <PredictionGraph :timeseries="timeseries" :highlight="highlight" />
-      </n-card>
-      <n-card>
-        <PredictionSummary
-          :summary="getSummarySample(details, currentSample.index)"
-        />
-      </n-card>
-      <n-card>
-        <PredictionTopUsers
-          :outcomes="getOutcomesSample(details, currentSample.index)"
-        />
-      </n-card>
-      <n-card>
+    <n-h1>Prediction Details</n-h1>
+    <n-tabs type="line" animated>
+      <n-tab-pane name="activity" tab="Activity">
         <n-space vertical>
-          <h2>Similar Predictions</h2>
-          <n-card
-            v-for="similarSummary in similar"
-            :key="similarSummary?.timestamp"
-          >
-            <PredictionSummary :summary="similarSummary" />
+          <n-card>
+            <PredictionGraph :timeseries="timeseries" :highlight="highlight" />
+          </n-card>
+          <n-card>
+            <PredictionSummary
+              :summary="getSummarySample(details, currentSample.index)"
+            />
+          </n-card>
+          <n-card>
+            <PredictionTopUsers
+              :outcomes="getOutcomesSample(details, currentSample.index)"
+            />
           </n-card>
         </n-space>
-      </n-card>
-    </n-space>
+      </n-tab-pane>
+      <n-tab-pane name="similar" tab="Similar Predictions">
+        <n-el v-if="similar.length > 0">
+          <n-space vertical>
+            <n-card
+              v-for="similarSummary in similar"
+              :key="similarSummary?.timestamp"
+            >
+              <PredictionSummary :summary="similarSummary" />
+            </n-card>
+          </n-space>
+        </n-el>
+        <n-el v-else> Nothing to see here... </n-el>
+      </n-tab-pane>
+    </n-tabs>
   </n-layout>
 </template>
 
@@ -49,6 +52,7 @@ import { useRoute } from "vue-router";
 import Summary from "@/models/Summary";
 import Details from "@/models/Details";
 import Outcome from "@/models/Outcome";
+import { sort } from "@/utils/Timestamp";
 
 const currentSample = ref({
   index: 0,
@@ -159,10 +163,13 @@ export default defineComponent({
       const summary = summaries[0];
       state.summary = summary;
 
-      const similar = (await Summary.params({
+      let similar = (await Summary.params({
         title: summary.title || "",
       }).get()) as Summary[];
-      state.similar = similar.filter((e) => e.id !== summary.id);
+      const currentSimilar = similar.findIndex((e) => e.id === summary.id);
+      similar[currentSimilar].title += " (current)";
+      similar = similar.sort(sort);
+      state.similar = similar;
     }
     async function getDetails() {
       const details = (await Details.params({
